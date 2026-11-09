@@ -1,4 +1,4 @@
-// All UI copy lives in string files (Russian, «ёлочки» quotes, ’ apostrophe).
+// Все тексты интерфейса живут в файлах строк: по-русски, кавычки «ёлочки», апостроф ’.
 export const ru = {
   today: {
     title: 'Сегодня',

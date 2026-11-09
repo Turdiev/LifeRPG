@@ -1,5 +1,5 @@
-# Local PostgreSQL for development only. These credentials are not secrets.
-# Production uses Neon (see docs/tech-spec.md).
+# Локальный PostgreSQL только для разработки. Эти учётные данные не секрет.
+# В продакшене — Neon (см. docs/tech-spec.md).
 services:
   postgres:
     image: postgres:17-alpine

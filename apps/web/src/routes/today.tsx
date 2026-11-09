@@ -5,7 +5,7 @@ import { ru } from '../shared/strings/ru';
 
 async function fetchHealth() {
   const res = await fetch('/api/health');
-  // The API answers 503 with the same body shape when the database is down.
+  // Если база недоступна, API отвечает 503 с телом той же формы.
   return healthResponseSchema.parse(await res.json());
 }
 

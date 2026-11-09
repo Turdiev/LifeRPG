@@ -14,8 +14,8 @@ import {
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
-// Base columns of the Better Auth `user` table. Better Auth itself is wired in at
-// stage 6; the table exists now so that `quests.user_id` can have a real foreign key.
+// Базовые колонки таблицы `user` из Better Auth. Сам Better Auth подключается на этапе 6,
+// а таблица нужна уже сейчас, чтобы у `quests.user_id` был настоящий внешний ключ.
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -29,8 +29,8 @@ export const user = pgTable('user', {
 export const questKind = pgEnum('quest_kind', ['line', 'chapter', 'quest', 'step']);
 export const questStatus = pgEnum('quest_status', ['open', 'done', 'paused', 'cancelled']);
 
-// fractional-indexing keys compare bytewise (ASCII), so the column must use the "C"
-// collation; the default locale-aware collation would order siblings differently.
+// Ключи fractional-indexing сравниваются побайтово (ASCII), поэтому колонке нужна
+// сортировка "C": сортировка по локали, которая стоит по умолчанию, переставила бы «братьев».
 const orderKey = customType<{ data: string }>({
   dataType() {
     return 'text COLLATE "C"';
@@ -44,7 +44,7 @@ export const quests = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
-    // Root of the tree; for a line it equals its own id.
+    // Корень дерева; у самой линии совпадает с её id.
     lineId: uuid('line_id').notNull(),
     parentId: uuid('parent_id').references((): AnyPgColumn => quests.id, {
       onDelete: 'cascade',
