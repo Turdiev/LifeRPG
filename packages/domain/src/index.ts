@@ -1,2 +1,16 @@
-// Pure domain logic (tree, progress, cascades, nextQuest) arrives in stage 2.
-export {};
+export type { Change, QuestKind, QuestNode, QuestStatus, Tree } from './types';
+export { DomainError, type DomainErrorCode } from './errors';
+export { buildTree } from './tree';
+export { progress, type Progress } from './progress';
+export {
+  applyAddChild,
+  applyCancel,
+  applyComplete,
+  applyDelete,
+  applyPause,
+  applyReopen,
+  applyRestore,
+  applyResume,
+  type CompleteOptions,
+} from './cascade';
+export { canBeActive, nextOpenChild, nextQuest } from './active-quest';

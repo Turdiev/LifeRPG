@@ -1,6 +1,6 @@
 import { defineConfig } from 'drizzle-kit';
 
-// Migrations are applied to the LOCAL database only; production is migrated by CI.
+// Миграции применяются только к ЛОКАЛЬНОЙ базе; продакшен мигрирует CI.
 const LOCAL_URL = 'postgres://postgres:postgres@127.0.0.1:5432/life_rpg';
 const url = process.env['DATABASE_URL'] ?? LOCAL_URL;
 

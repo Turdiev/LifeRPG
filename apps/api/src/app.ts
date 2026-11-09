@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 
 export type AppDeps = {
-  /** Resolves when the database answers a trivial query; rejects otherwise. */
+  /** Выполняется, если база ответила на простой запрос; иначе отклоняется. */
   pingDb: (env: Env) => Promise<void>;
 };
 
