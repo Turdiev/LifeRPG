@@ -1,0 +1,23 @@
+# Local PostgreSQL for development only. These credentials are not secrets.
+# Production uses Neon (see docs/tech-spec.md).
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: life-rpg-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: life_rpg
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d life_rpg"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:

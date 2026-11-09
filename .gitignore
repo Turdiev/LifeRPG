@@ -1,0 +1,17 @@
+node_modules
+dist
+.wrangler
+*.tsbuildinfo
+
+# secrets — set by the author, never committed
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+.DS_Store
+
+# local tooling
+.idea/
+.claude/settings.local.json
