@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canBeActive, nextOpenChild, nextQuest } from './active-quest';
+import { canBeActive, isBranchLocked, nextOpenChild, nextQuest } from './active-quest';
 import { chapter, line, makeTree, quest, step } from './testing';
 
 describe('canBeActive', () => {
@@ -41,6 +41,29 @@ describe('canBeActive', () => {
 
   it('rejects an id that is not in the tree, e.g. a deleted quest', () => {
     expect(canBeActive(tree, 'missing')).toBe(false);
+  });
+});
+
+describe('isBranchLocked', () => {
+  const tree = makeTree(
+    line('L', [chapter('Paused', [quest('InPaused')], 'paused'), quest('Cancelled', [step('InCancelled')], 'cancelled'), quest('Q')]),
+  );
+
+  it('is true when an ancestor is paused or cancelled', () => {
+    expect(isBranchLocked(tree, 'InPaused')).toBe(true);
+    expect(isBranchLocked(tree, 'InCancelled')).toBe(true);
+  });
+
+  it('is true when the locked ancestor is higher than the parent', () => {
+    const deep = makeTree(line('L', [chapter('C', [quest('Q', [step('S')])], 'paused')]));
+
+    expect(isBranchLocked(deep, 'S')).toBe(true);
+  });
+
+  it('ignores the status of the node itself', () => {
+    expect(isBranchLocked(tree, 'Paused')).toBe(false);
+    expect(isBranchLocked(tree, 'Cancelled')).toBe(false);
+    expect(isBranchLocked(tree, 'Q')).toBe(false);
   });
 });
 

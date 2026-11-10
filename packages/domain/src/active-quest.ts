@@ -8,6 +8,11 @@ export function canBeActive(tree: Tree, questId: string): boolean {
   return !ancestorsOf(tree, questId).some(isLocked);
 }
 
+/** Предок на паузе или отменён: правило 3 «Доменной логики» блокирует действия с узлом. */
+export function isBranchLocked(tree: Tree, id: string): boolean {
+  return ancestorsOf(tree, id).some(isLocked);
+}
+
 export function nextOpenChild(tree: Tree, parentId: string): string | null {
   return childrenOf(tree, parentId).find((child) => child.status === 'open')?.id ?? null;
 }

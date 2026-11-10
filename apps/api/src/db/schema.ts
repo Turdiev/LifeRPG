@@ -67,3 +67,12 @@ export const quests = pgTable(
     index('quests_journal_idx').on(t.userId, t.kind, t.status),
   ],
 );
+
+export const userSettings = pgTable('user_settings', {
+  userId: text('user_id')
+    .primaryKey()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  activeQuestId: uuid('active_quest_id').references(() => quests.id, { onDelete: 'set null' }),
+  vibration: boolean('vibration').notNull().default(false),
+  sound: boolean('sound').notNull().default(false),
+});

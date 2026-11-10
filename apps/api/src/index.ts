@@ -1,16 +1,10 @@
-import { sql } from 'drizzle-orm';
 import { createApp } from './app';
 import { connectDb } from './db/client';
+import { DEV_USER_ID } from './dev-user';
 
 const app = createApp({
-  pingDb: async (env) => {
-    const { db, close } = await connectDb(env.HYPERDRIVE.connectionString);
-    try {
-      await db.execute(sql`select 1`);
-    } finally {
-      await close();
-    }
-  },
+  connectDb: (env) => connectDb(env.HYPERDRIVE.connectionString),
+  devUserId: DEV_USER_ID,
 });
 
 export default app;

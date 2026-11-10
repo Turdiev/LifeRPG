@@ -41,10 +41,12 @@ PWA-ежедневник, который превращает большую ц�
 pnpm install
 pnpm db:up
 pnpm db:migrate
+pnpm db:seed
 pnpm dev
 ```
 
 `pnpm db:migrate` нужен при первом запуске и после каждой новой миграции; `pnpm dev` сам миграции не применяет.
+`pnpm db:seed` добавляет тестового пользователя `dev-user`: до входа через Google (этап 6) API работает от его имени.
 
 После `pnpm dev` работают:
 
@@ -65,12 +67,13 @@ Vite проксирует на wrangler.
 | Команда | Что делает |
 | --- | --- |
 | `pnpm dev` | Поднимает PostgreSQL в Docker, затем параллельно `wrangler dev` (API) и Vite (клиент) |
-| `pnpm test` | Vitest по всем пакетам |
+| `pnpm test` | Vitest по всем пакетам; интеграционным тестам API нужен запущенный PostgreSQL (`pnpm db:up`), они работают в отдельной базе `life_rpg_test` |
 | `pnpm typecheck` | `tsc --noEmit` в каждом пакете |
 | `pnpm lint` | ESLint по всему монорепо |
 | `pnpm db:up` / `pnpm db:down` | Запустить / остановить локальный PostgreSQL; данные остаются в именованном томе Docker (см. [docker-compose.yml](docker-compose.yml)), сбросить базу — `docker compose down -v` |
 | `pnpm db:generate` | Сгенерировать миграцию из [apps/api/src/db/schema.ts](apps/api/src/db/schema.ts) |
 | `pnpm db:migrate` | Применить миграции к локальной базе |
+| `pnpm db:seed` | Добавить в локальную базу тестового пользователя `dev-user` |
 | `pnpm --filter @life-rpg/api cf-typegen` | Перегенерировать `worker-configuration.d.ts` после правки `wrangler.jsonc` |
 
 ## Структура

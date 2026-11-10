@@ -12,6 +12,7 @@
     "db:down": "docker compose down",
     "db:generate": "pnpm --filter @life-rpg/api db:generate",
     "db:migrate": "pnpm --filter @life-rpg/api db:migrate",
+    "db:seed": "docker compose exec -T postgres psql -U postgres -d life_rpg -v ON_ERROR_STOP=1 < apps/api/src/db/seed-dev.sql",
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint ."
