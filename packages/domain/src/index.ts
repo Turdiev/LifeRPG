@@ -13,4 +13,5 @@ export {
   applyResume,
   type CompleteOptions,
 } from './cascade';
-export { canBeActive, nextOpenChild, nextQuest } from './active-quest';
+export { canBeActive, isBranchLocked, nextOpenChild, nextQuest } from './active-quest';
+export { applyChanges } from './apply-changes';

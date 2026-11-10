@@ -68,12 +68,13 @@ docs/            спецификации
 ```
 pnpm install            # зависимости всего монорепо
 pnpm dev                # PostgreSQL в Docker + wrangler dev (API, :8787) + Vite (клиент, :5173)
-pnpm test               # Vitest по всем пакетам
+pnpm test               # Vitest по всем пакетам; тестам API нужен PostgreSQL (pnpm db:up), база life_rpg_test
 pnpm typecheck          # tsc --noEmit в каждом пакете
 pnpm lint               # ESLint
 pnpm db:up / db:down    # локальный PostgreSQL (docker compose)
 pnpm db:generate        # drizzle-kit: новая миграция из apps/api/src/db/schema.ts
 pnpm db:migrate         # применить миграции к ЛОКАЛЬНОЙ базе (drizzle.config.ts отказывается работать с не-локальным хостом)
+pnpm db:seed            # тестовый пользователь dev-user в локальной базе (до входа через Google, этап 6)
 pnpm --filter @life-rpg/api cf-typegen   # перегенерировать worker-configuration.d.ts после правки wrangler.jsonc
 ```
 
@@ -114,5 +115,5 @@ pnpm --filter @life-rpg/api cf-typegen   # перегенерировать work
 
 ## Текущий этап
 
-Этап 3 «API дерева» из раздела «План реализации» в `docs/tech-spec.md`.
+Этап 4 «Журнал и экран линии» из раздела «План реализации» в `docs/tech-spec.md`.
 Обновляй этот раздел, когда этап закрыт.

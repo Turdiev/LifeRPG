@@ -10,10 +10,13 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@life-rpg/domain": "workspace:*",
     "@life-rpg/shared": "workspace:*",
     "drizzle-orm": "0.45.4",
+    "fractional-indexing": "4.0.0",
     "hono": "4.13.13",
-    "pg": "8.23.1"
+    "pg": "8.23.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "24.19.2",
