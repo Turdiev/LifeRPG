@@ -7,6 +7,7 @@ import {
   type LinesResponse,
   type UpdateQuestRequest,
 } from '@life-rpg/shared';
+import type { DraftKind, QuestDraft } from '@life-rpg/domain';
 import { apiRequest } from './client';
 
 export type QuestStatus = LinesResponse['lines'][number]['status'];
@@ -57,4 +58,9 @@ export function reopenQuest(id: string) {
 
 export function setActiveQuest(questId: string | null) {
   return apiRequest('PUT', '/me/active-quest', mutationResponseSchema, { questId });
+}
+
+/** Черновик из парсера домена не глубже этапа; форму проверит схема на сервере. */
+export function createQuestBatch(body: { parentId: string; kind: DraftKind; items: QuestDraft[] }) {
+  return apiRequest('POST', '/quests/batch', mutationResponseSchema, body);
 }

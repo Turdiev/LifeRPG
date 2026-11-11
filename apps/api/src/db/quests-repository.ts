@@ -101,18 +101,25 @@ export async function lastLinePosition(ex: Executor, userId: string): Promise<st
 }
 
 export async function insertQuest(ex: Executor, userId: string, record: QuestRecord): Promise<void> {
-  await ex.insert(quests).values({
-    id: record.id,
-    userId,
-    lineId: record.lineId,
-    parentId: record.parentId,
-    kind: record.kind,
-    status: record.status,
-    position: record.position,
-    title: record.title,
-    description: record.description,
-    deadline: record.deadline,
-  });
+  await insertQuests(ex, userId, [record]);
+}
+
+/** Вставка списка — одним запросом; внешний ключ parent_id проверяется в конце команды. */
+export async function insertQuests(ex: Executor, userId: string, records: readonly QuestRecord[]): Promise<void> {
+  await ex.insert(quests).values(
+    records.map((record) => ({
+      id: record.id,
+      userId,
+      lineId: record.lineId,
+      parentId: record.parentId,
+      kind: record.kind,
+      status: record.status,
+      position: record.position,
+      title: record.title,
+      description: record.description,
+      deadline: record.deadline,
+    })),
+  );
 }
 
 /** Все изменения каскада — одним запросом. */

@@ -7,6 +7,7 @@ export const errorCodeSchema = z.enum([
   'has_open_children',
   'invalid_parent',
   'invalid_transition',
+  'payload_too_large',
   'internal_error',
 ]);
 export type ErrorCode = z.infer<typeof errorCodeSchema>;

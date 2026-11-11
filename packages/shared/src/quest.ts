@@ -42,6 +42,30 @@ export const createQuestRequestSchema = z.strictObject({
 });
 export type CreateQuestRequest = z.infer<typeof createQuestRequestSchema>;
 
+/** Защита от случайной вставки целой книги; большой план целиком проходит. */
+export const BATCH_MAX = 200;
+
+// Глубже трёх уровней (глава → задание → этап) черновик не бывает, поэтому схема без рекурсии:
+// рекурсивный разбор тысячи вложенных уровней переполняет стек, и вместо 400 был бы 500.
+const stepDraftSchema = z.strictObject({ title, children: z.array(z.never()).max(0) });
+const questDraftSchema = z.strictObject({ title, children: z.array(stepDraftSchema).max(BATCH_MAX) });
+/** Дерево черновика из вставленного списка; в v2 его же заполнит ИИ-разбиение (tech-spec). */
+export const draftSchema = z.strictObject({ title, children: z.array(questDraftSchema).max(BATCH_MAX) });
+
+type DraftNode = { children: readonly DraftNode[] };
+const draftTotal = (drafts: readonly DraftNode[]): number =>
+  drafts.reduce((sum, draft) => sum + 1 + draftTotal(draft.children), 0);
+
+/** `kind` — вид верхнего уровня (строка «+ Добавить …»); вложенные выводятся из него. */
+export const createBatchRequestSchema = z
+  .strictObject({
+    parentId: z.uuid(),
+    kind: z.enum(['chapter', 'quest', 'step']),
+    items: z.array(draftSchema).min(1).max(BATCH_MAX),
+  })
+  .refine((body) => draftTotal(body.items) <= BATCH_MAX, { message: `At most ${BATCH_MAX} elements at once` });
+export type CreateBatchRequest = z.infer<typeof createBatchRequestSchema>;
+
 export const updateQuestRequestSchema = z
   .strictObject({
     title: title.optional(),

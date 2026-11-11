@@ -11,13 +11,16 @@ import {
   buildTree,
   canBeActive,
   isBranchLocked,
+  kindAtDepth,
   progress,
   type Change,
   type CompleteOptions,
+  type DraftKind,
+  type QuestDraft,
   type Progress,
   type Tree,
 } from '@life-rpg/domain';
-import type { LineTreeResponse, MutationResponse, Quest } from '@life-rpg/shared';
+import type { LineTreeResponse, MutationResponse } from '@life-rpg/shared';
 
 export type TreeNode = LineTreeResponse['nodes'][number];
 export type NodeAction = 'complete' | 'reopen' | 'pause' | 'resume' | 'cancel' | 'restore';
@@ -154,14 +157,19 @@ export function applyStatusLocally(
   return withActiveChecked({ ...data, nodes: applyChanges(data.nodes, changes) });
 }
 
-export type Draft = { id: string; parentId: string; kind: Quest['kind']; title: string };
+export type Draft = { id: string; parentId: string; kind: DraftKind; title: string };
 
 let pendingSeq = 0;
 
 /** Новый узел встаёт последним среди «братьев», пока сервер не выдаст настоящий ключ порядка. */
 export function insertLocally(data: LineTreeResponse, draft: Draft, now: string): LineTreeResponse {
-  const tree = buildTree(data.nodes);
-  const node: TreeNode = {
+  const node = pendingNode(draft);
+  const changes = applyAddChild(buildTree(data.nodes), node, now);
+  return { ...data, nodes: applyChanges([...data.nodes, node], changes) };
+}
+
+function pendingNode(draft: Draft): TreeNode {
+  return {
     ...draft,
     status: 'open',
     // Ключи fractional-indexing начинаются с буквы, а '~' больше любой из них: временные узлы
@@ -172,8 +180,45 @@ export function insertLocally(data: LineTreeResponse, draft: Draft, now: string)
     completedAt: null,
     progress: { done: 0, total: 0 },
   };
-  const changes = applyAddChild(tree, node, now);
-  return { ...data, nodes: applyChanges([...data.nodes, node], changes) };
+}
+
+/** Черновик с временными id: те же id заменит ответ сервера (`mergeResponse`). */
+export type TempDraft = { id: string; title: string; children: TempDraft[] };
+
+export function withTempIds(drafts: readonly QuestDraft[]): TempDraft[] {
+  return drafts.map((draft) => ({
+    id: `temp-${crypto.randomUUID()}`,
+    title: draft.title,
+    children: withTempIds(draft.children),
+  }));
+}
+
+export function tempIdsOf(drafts: readonly TempDraft[]): string[] {
+  return drafts.flatMap((draft) => [draft.id, ...tempIdsOf(draft.children)]);
+}
+
+/** Вставленный список целиком появляется сразу — родители раньше детей, как в запросе. */
+export function insertDraftsLocally(
+  data: LineTreeResponse,
+  parentId: string,
+  top: DraftKind,
+  drafts: readonly TempDraft[],
+  now: string,
+): LineTreeResponse {
+  const added: TreeNode[] = [];
+  const place = (list: readonly TempDraft[], parent: string, depth: number) => {
+    const kind = kindAtDepth(top, depth);
+    if (!kind) return;
+    for (const draft of list) {
+      added.push(pendingNode({ id: draft.id, parentId: parent, kind, title: draft.title }));
+      place(draft.children, draft.id, depth + 1);
+    }
+  };
+  place(drafts, parentId, 0);
+  if (added.length === 0) return data;
+  // Как на сервере: предков переоткрывает один новый ребёнок, остальные узлы — под ним.
+  const changes = applyAddChild(buildTree(data.nodes), added[0]!, now);
+  return { ...data, nodes: applyChanges([...data.nodes, ...added], changes) };
 }
 
 /** Ответ сервера — источник истины: он заменяет локальный расчёт и временные узлы. */
@@ -183,8 +228,9 @@ export function mergeResponse(
   removeIds: readonly string[] = [],
 ): LineTreeResponse {
   const changed = new Map(response.changed.map((node) => [node.id, node]));
+  const removed = new Set(removeIds);
   const kept = data.nodes
-    .filter((node) => !removeIds.includes(node.id))
+    .filter((node) => !removed.has(node.id))
     .map((node) => {
       const update = changed.get(node.id);
       return update ? { ...node, ...update } : node;

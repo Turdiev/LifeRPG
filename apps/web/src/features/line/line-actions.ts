@@ -1,3 +1,4 @@
+import type { DraftKind } from '@life-rpg/domain';
 import { createContext, useContext } from 'react';
 import type { CreateVars } from './use-line';
 import type { NodeAction, TreeNode } from './line-model';
@@ -7,6 +8,9 @@ export type LineActions = {
   toggle: (node: TreeNode) => void;
   run: (node: TreeNode, action: NodeAction) => void;
   create: (draft: Omit<CreateVars, 'id'>) => void;
+  /** Вставленный текст из нескольких строк — через предпросмотр. */
+  /** `returnFocus` — поле, куда вернуть фокус после предпросмотра: у диалога нет кнопки-триггера. */
+  pasteList: (parentId: string, kind: DraftKind, text: string, returnFocus: HTMLElement) => void;
   openDetails: (id: string) => void;
   askDelete: (node: TreeNode) => void;
 };

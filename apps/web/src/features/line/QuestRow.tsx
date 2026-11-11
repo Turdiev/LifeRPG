@@ -17,7 +17,7 @@ type QuestRowProps = { quest: QuestView; expanded: boolean; onToggleExpanded: ()
  * этапы, в раскрытом виде — открывает лист деталей (docs/ux.md, «Экран сюжетной линии»).
  */
 export function QuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
-  const { toggle, openDetails, create } = useLineActions();
+  const { toggle, openDetails } = useLineActions();
   const { node } = quest;
   const done = node.status === 'done';
   const disabled = quest.locked || isPending(node);
@@ -90,7 +90,7 @@ export function QuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
             ))}
           </DoneGroup>
           {!disabled && (
-            <InlineAdd kind="step" onCreate={(title) => create({ parentId: node.id, kind: 'step', title })} />
+            <InlineAdd parentId={node.id} kind="step" />
           )}
         </div>
       )}
