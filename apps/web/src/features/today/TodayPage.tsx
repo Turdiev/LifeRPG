@@ -1,0 +1,201 @@
+import { Link } from '@tanstack/react-router';
+import { useMemo, useState, type ReactNode } from 'react';
+import { LineFormSheet } from '@/features/journal/LineFormSheet';
+import type { TreeNode } from '@/features/line/line-model';
+import { useNodeStatus } from '@/features/line/use-line';
+import { useDelayedFlag } from '@/shared/hooks/use-delayed-flag';
+import { ru } from '@/shared/strings/ru';
+import { Button } from '@/shared/ui/button';
+import { Skeleton } from '@/shared/ui/skeleton';
+import { PickQuest } from './PickQuest';
+import { QuestCard } from './QuestCard';
+import { buildTodayView, closedByComplete, greeting, todayState, type TodayState } from './today-model';
+import { GoalLink, TodayLines } from './TodayLines';
+import { useActiveLineTree, useTakeQuest, useToday } from './use-today';
+
+type QuestRef = { questId: string; lineId: string };
+
+export function TodayPage() {
+  const today = useToday();
+  const take = useTakeQuest();
+  const showSkeleton = useDelayedFlag(today.isPending, 300);
+  // Квест, закрытый на этом экране: сервер снимает его с активных, а карточка остаётся
+  // с галочками, пока не появится новый активный квест или пользователь не уйдёт с экрана.
+  const [closed, setClosed] = useState<QuestRef | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  if (today.isPending) return showSkeleton ? <TodaySkeleton /> : null;
+  // Неудачный фоновый перезапрос при данных в кеше экран не прячет.
+  if (!today.data) {
+    return (
+      <div className="space-y-4">
+        <TodayHeader />
+        <p>{ru.today.loadError}</p>
+        <Button variant="outline" onClick={() => void today.refetch()}>
+          {ru.today.retry}
+        </Button>
+      </div>
+    );
+  }
+
+  const data = today.data;
+  const active = data.active && { questId: data.active.questId, lineId: data.active.lineId };
+  // Новый активный квест (взятый здесь, через «Повторить» в тосте или на другом экране) важнее
+  // закрытого. Состояние правится прямо в рендере, без эффекта — как `watch` во Vue, но без
+  // лишнего кадра со старой карточкой (React, «Adjusting state when a prop changes»).
+  if (active && closed && active.questId !== closed.questId) setClosed(null);
+  const shown = active ?? closed;
+
+  return (
+    <div className="space-y-8">
+      <TodayHeader />
+
+      {shown && (
+        <ActiveQuest
+          key={shown.questId}
+          quest={shown}
+          isActive={active?.questId === shown.questId}
+          closedHere={closed?.questId === shown.questId}
+          onClosed={() => setClosed(shown)}
+        />
+      )}
+
+      {!data.active && (
+        <NoActiveQuest
+          state={todayState(data)}
+          data={data}
+          takingId={take.isPending ? take.variables.questId : null}
+          onTake={({ id, lineId }) => take.mutate({ questId: id, lineId })}
+          onCreate={() => setCreating(true)}
+        />
+      )}
+
+      {/* Цель карточки уже видна под ней строкой прогресса — в списке её не повторяем. */}
+      <TodayLines
+        title={data.active ? ru.today.otherLines : ru.today.linesInProgress}
+        lines={data.otherLines.filter((line) => line.id !== shown?.lineId)}
+      />
+
+      <LineFormSheet open={creating} onOpenChange={setCreating} />
+    </div>
+  );
+}
+
+function TodayHeader() {
+  const now = new Date();
+  const date = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
+  return (
+    <header className="space-y-1">
+      <p className="text-sm text-muted-foreground first-letter:uppercase">{date}</p>
+      <h1 className="text-2xl">{ru.today.greeting[greeting(now.getHours())]}</h1>
+    </header>
+  );
+}
+
+type ActiveQuestProps = {
+  quest: QuestRef;
+  /** Сервер считает квест активным (ответ `/today`). */
+  isActive: boolean;
+  /** Квест закрыт отметкой на этом экране. */
+  closedHere: boolean;
+  onClosed: () => void;
+};
+
+function ActiveQuest({ quest, isActive, closedHere, onClosed }: ActiveQuestProps) {
+  const tree = useActiveLineTree(quest.lineId);
+  const status = useNodeStatus(quest.lineId);
+  // Отмеченное здесь остаётся на месте с галочкой, как на экране линии (docs/ux.md, «Решения по UX»).
+  const [justDone, setJustDone] = useState<ReadonlySet<string>>(new Set());
+  const view = useMemo(
+    () => (tree.data ? buildTodayView(tree.data.nodes, quest.questId, justDone) : null),
+    [tree.data, quest.questId, justDone],
+  );
+  // Дерева нет только при ошибке загрузки или если кеш устарел и задание ещё не пришло: ждём перезапрос.
+  if (!tree.data || !view) return null;
+  const data = tree.data;
+  // «Пройден» — по статусу в кеше дерева, а не по колбэкам мутации: откат ошибки и «Повторить»
+  // меняют кеш, и карточка следует за ним сама.
+  const finished = closedHere && view.quest.status === 'done';
+  if (!isActive && !finished) return null;
+
+  const toggle = (node: TreeNode) => {
+    if (node.status === 'done') return status.mutate({ node, action: 'reopen' });
+    const closed = closedByComplete(data, node.id, new Date().toISOString());
+    setJustDone((set) => new Set([...set, ...closed]));
+    if (closed.includes(quest.questId)) onClosed();
+    status.mutate({ node, action: 'complete' });
+  };
+
+  return (
+    <div className="space-y-2">
+      <QuestCard view={view} finished={finished} onToggle={toggle} />
+      <GoalLink line={view.line} progress={view.lineProgress} />
+    </div>
+  );
+}
+
+type NoActiveQuestProps = {
+  state: TodayState;
+  data: NonNullable<ReturnType<typeof useToday>['data']>;
+  takingId: string | null;
+  onTake: (suggestion: { id: string; lineId: string }) => void;
+  onCreate: () => void;
+};
+
+function NoActiveQuest({ state, data, takingId, onTake, onCreate }: NoActiveQuestProps) {
+  if (state === 'pick') return <PickQuest suggestions={data.suggestions} takingId={takingId} onTake={onTake} />;
+  if (state === 'first') {
+    return (
+      <EmptyState title={ru.journal.emptyFirst.title} text={ru.journal.emptyFirst.text}>
+        <Button onClick={onCreate}>{ru.journal.emptyFirst.action}</Button>
+      </EmptyState>
+    );
+  }
+  if (state === 'noQuests') {
+    const line = data.otherLines[0]!;
+    return (
+      <EmptyState title={ru.today.noQuests.title} text={ru.today.noQuests.text}>
+        <Button asChild>
+          <Link to="/line/$lineId" params={{ lineId: line.id }}>
+            {ru.today.noQuests.action}
+          </Link>
+        </Button>
+      </EmptyState>
+    );
+  }
+  const copy = state === 'allPaused' ? ru.today.allPaused : ru.today.nothingOpen;
+  // Журнал открывается на фильтре, где цели есть: фильтр «В работе» здесь заведомо пуст.
+  const filter = state === 'allPaused' ? 'paused' : data.counts.done > 0 ? 'done' : 'cancelled';
+  return (
+    <EmptyState title={copy.title} text={copy.text}>
+      <Button asChild variant="outline">
+        <Link to="/journal" search={{ status: filter }}>
+          {ru.today.openJournal}
+        </Link>
+      </Button>
+    </EmptyState>
+  );
+}
+
+function EmptyState({ title, text, children }: { title: string; text: string; children: ReactNode }) {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xl">{title}</h2>
+      <p className="max-w-[46ch] text-muted-foreground">{text}</p>
+      {children}
+    </section>
+  );
+}
+
+function TodaySkeleton() {
+  return (
+    <div className="space-y-8" aria-hidden>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-7 w-48" />
+      </div>
+      <Skeleton className="h-56 rounded-xl" />
+      <Skeleton className="h-24 rounded-xl" />
+    </div>
+  );
+}

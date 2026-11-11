@@ -10,15 +10,48 @@ export const ru = {
     journal: 'Журнал',
   },
   today: {
-    title: 'Сегодня',
-    stub: 'Здесь появится активный квест — этап 5 плана.',
-  },
-  health: {
-    label: 'Связь с сервером',
-    checking: 'проверяем…',
-    ok: 'всё работает',
-    dbDown: 'сервер отвечает, база недоступна',
-    unreachable: 'сервер недоступен',
+    greeting: {
+      morning: 'Доброе утро',
+      day: 'Добрый день',
+      evening: 'Добрый вечер',
+      night: 'Доброй ночи',
+    },
+    activeQuest: 'Активный квест',
+    path: (line: string, chapter: string) => `${line} › ${chapter}`,
+    // «из» требует родительного падежа: «1 из 1 этапа», «3 из 5 этапов».
+    steps: (done: number, total: number, noun: string) => `${done} из ${total} ${noun}`,
+    stepsNoun: { one: 'этапа', few: 'этапов', many: 'этапов' },
+    more: (count: number, noun: string) => `ещё ${count} ${noun}`,
+    moreNoun: { one: 'этап', few: 'этапа', many: 'этапов' },
+    stepsLabel: (title: string) => `Этапы квеста «${title}»`,
+    completeQuest: 'Квест выполнен',
+    questDone: 'Квест пройден',
+    // Неразрывные пробелы: процент не отрывается от названия при переносе.
+    goal: (title: string, percent: number) => `${title}\u00a0·\u00a0${percent}%`,
+    openGoal: (title: string, percent: number) => `Открыть цель «${title}», выполнено ${percent}%`,
+    otherLines: 'Другие цели в работе',
+    linesInProgress: 'Цели в работе',
+    pick: {
+      title: 'Выбери квест',
+      text: 'Возьми одно задание — оно будет ждать здесь, пока не выполнишь.',
+      take: (title: string, line: string) => `Взять «${title}» из цели «${line}»`,
+    },
+    allPaused: {
+      title: 'Все цели на паузе',
+      text: 'Возобнови одну из них в журнале, и её задания появятся здесь.',
+    },
+    nothingOpen: {
+      title: 'Сейчас ни одна цель не в работе',
+      text: 'Новую цель можно начать в журнале.',
+    },
+    noQuests: {
+      title: 'В целях пока нет открытых заданий',
+      text: 'Разбей цель на задания — и первое из них можно будет взять отсюда.',
+      action: 'Добавить задания',
+    },
+    openJournal: 'Открыть журнал',
+    loadError: 'Не удалось загрузить план на сегодня',
+    retry: 'Повторить',
   },
   journal: {
     title: 'Журнал квестов',
