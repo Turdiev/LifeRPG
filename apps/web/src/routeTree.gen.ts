@@ -10,11 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as JournalRouteImport } from './routes/journal'
 import { Route as TodayRouteImport } from './routes/today'
+import { Route as LineLineIdRouteImport } from './routes/line.$lineId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JournalRoute = JournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TodayRoute = TodayRouteImport.update({
@@ -22,31 +29,44 @@ const TodayRoute = TodayRouteImport.update({
   path: '/today',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LineLineIdRoute = LineLineIdRouteImport.update({
+  id: '/line/$lineId',
+  path: '/line/$lineId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/journal': typeof JournalRoute
   '/today': typeof TodayRoute
+  '/line/$lineId': typeof LineLineIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/journal': typeof JournalRoute
   '/today': typeof TodayRoute
+  '/line/$lineId': typeof LineLineIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/journal': typeof JournalRoute
   '/today': typeof TodayRoute
+  '/line/$lineId': typeof LineLineIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/today'
+  fullPaths: '/' | '/journal' | '/today' | '/line/$lineId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/today'
-  id: '__root__' | '/' | '/today'
+  to: '/' | '/journal' | '/today' | '/line/$lineId'
+  id: '__root__' | '/' | '/journal' | '/today' | '/line/$lineId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  JournalRoute: typeof JournalRoute
   TodayRoute: typeof TodayRoute
+  LineLineIdRoute: typeof LineLineIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +78,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/journal': {
+      id: '/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof JournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/today': {
       id: '/today'
       path: '/today'
@@ -65,12 +92,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TodayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/line/$lineId': {
+      id: '/line/$lineId'
+      path: '/line/$lineId'
+      fullPath: '/line/$lineId'
+      preLoaderRoute: typeof LineLineIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  JournalRoute: JournalRoute,
   TodayRoute: TodayRoute,
+  LineLineIdRoute: LineLineIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
