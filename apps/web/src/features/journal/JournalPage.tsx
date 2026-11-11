@@ -9,7 +9,7 @@ import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { ToggleGroup, ToggleGroupItem } from '@/shared/ui/toggle-group';
 import { DeleteLineDialog } from './DeleteLineDialog';
-import { localToday } from './journal-model';
+import { localToday } from '@/shared/lib/format';
 import { LineCard } from './LineCard';
 import { LineFormSheet } from './LineFormSheet';
 import { useLineChange, useLines } from './use-journal';

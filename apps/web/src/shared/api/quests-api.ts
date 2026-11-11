@@ -3,6 +3,7 @@ import {
   linesResponseSchema,
   mutationResponseSchema,
   type CreateLineRequest,
+  type CreateQuestRequest,
   type LinesResponse,
   type UpdateQuestRequest,
 } from '@life-rpg/shared';
@@ -34,4 +35,26 @@ export function runStatusAction(id: string, action: StatusAction) {
 
 export function deleteQuest(id: string) {
   return apiRequest('DELETE', `/quests/${encodeURIComponent(id)}`, mutationResponseSchema);
+}
+
+export function createQuest(body: CreateQuestRequest) {
+  return apiRequest('POST', '/quests', mutationResponseSchema, body);
+}
+
+/** Тело только у отметки задания с открытыми этапами: пустое JSON-тело API отклонил бы. */
+export function completeQuest(id: string, withChildren: boolean) {
+  return apiRequest(
+    'POST',
+    `/quests/${encodeURIComponent(id)}/complete`,
+    mutationResponseSchema,
+    withChildren ? { withChildren } : undefined,
+  );
+}
+
+export function reopenQuest(id: string) {
+  return apiRequest('POST', `/quests/${encodeURIComponent(id)}/reopen`, mutationResponseSchema);
+}
+
+export function setActiveQuest(questId: string | null) {
+  return apiRequest('PUT', '/me/active-quest', mutationResponseSchema, { questId });
 }
