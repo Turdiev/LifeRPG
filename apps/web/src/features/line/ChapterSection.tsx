@@ -5,7 +5,7 @@ import { ru } from '@/shared/strings/ru';
 import { Progress } from '@/shared/ui/progress';
 import { DoneGroup } from './DoneGroup';
 import { InlineAdd } from './InlineAdd';
-import { isPending, useLineActions } from './line-actions';
+import { isPending } from './line-actions';
 import type { ChapterView } from './line-model';
 import { NodeMenu } from './NodeMenu';
 import { QuestRow } from './QuestRow';
@@ -20,7 +20,6 @@ type ChapterSectionProps = {
 
 /** Глава — раскрываемая секция с прогрессом и счётчиком «3 / 8» (docs/ux.md). */
 export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onToggleQuest }: ChapterSectionProps) {
-  const { create } = useLineActions();
   const { node, progress } = chapter;
   const muted = chapter.locked || node.status === 'done';
   const Icon = node.status === 'paused' ? Pause : Flag;
@@ -83,7 +82,7 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
             ))}
           </DoneGroup>
           {!chapter.locked && !isPending(node) && (
-            <InlineAdd kind="quest" onCreate={(title) => create({ parentId: node.id, kind: 'quest', title })} />
+            <InlineAdd parentId={node.id} kind="quest" />
           )}
         </div>
       )}

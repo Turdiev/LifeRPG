@@ -1,10 +1,17 @@
-import type { CreateQuestRequest, LineTreeResponse, MutationResponse, UpdateQuestRequest } from '@life-rpg/shared';
+import type { DraftKind, QuestDraft } from '@life-rpg/domain';
+import type {
+  CreateQuestRequest,
+  LineTreeResponse,
+  MutationResponse,
+  UpdateQuestRequest,
+} from '@life-rpg/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/shared/api/keys';
 import {
   completeQuest,
   createQuest,
+  createQuestBatch,
   deleteQuest,
   fetchTree,
   reopenQuest,
@@ -15,10 +22,13 @@ import {
 import { ru } from '@/shared/strings/ru';
 import {
   applyStatusLocally,
+  insertDraftsLocally,
   insertLocally,
   mergeResponse,
   removeLocally,
+  tempIdsOf,
   type NodeAction,
+  type TempDraft,
   type TreeNode,
 } from './line-model';
 
@@ -116,6 +126,19 @@ export function useCreateNode(lineId: string) {
     mutationFn: ({ parentId, kind, title }) => createQuest({ parentId, kind, title }),
     optimistic: (data, draft) => insertLocally(data, draft, now()),
     merge: (data, response, draft) => mergeResponse(data, response, [draft.id]),
+  });
+}
+
+export type BatchVars = { parentId: string; kind: DraftKind; drafts: TempDraft[] };
+
+const withoutIds = (drafts: readonly TempDraft[]): QuestDraft[] =>
+  drafts.map((draft) => ({ title: draft.title, children: withoutIds(draft.children) }));
+
+export function useCreateBatch(lineId: string) {
+  return useTreeMutation<BatchVars>(lineId, {
+    mutationFn: ({ parentId, kind, drafts }) => createQuestBatch({ parentId, kind, items: withoutIds(drafts) }),
+    optimistic: (data, { parentId, kind, drafts }) => insertDraftsLocally(data, parentId, kind, drafts, now()),
+    merge: (data, response, { drafts }) => mergeResponse(data, response, tempIdsOf(drafts)),
   });
 }
 

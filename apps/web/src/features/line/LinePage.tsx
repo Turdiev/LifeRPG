@@ -1,4 +1,4 @@
-import { DomainError } from '@life-rpg/domain';
+import { DomainError, parseQuestList, type DraftKind, type ParsedList } from '@life-rpg/domain';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronLeft, Scroll } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -13,20 +13,22 @@ import { ChapterSection } from './ChapterSection';
 import { DoneGroup } from './DoneGroup';
 import { InlineAdd } from './InlineAdd';
 import { LineActionsContext, type LineActions } from './line-actions';
-import { applyStatusLocally, buildLineView, descendantCount, type TreeNode } from './line-model';
+import { applyStatusLocally, buildLineView, descendantCount, withTempIds, type TreeNode } from './line-model';
 import { LineBanner } from './LineBanner';
 import { CompleteAllDialog, DeleteNodeDialog } from './LineDialogs';
 import { NodeDetailsSheet } from './NodeDetailsSheet';
 import { NodeMenu } from './NodeMenu';
+import { PastePreviewDialog } from './PastePreviewDialog';
 import { QuestRow } from './QuestRow';
 import { SegmentedProgress } from './SegmentedProgress';
-import { useCreateNode, useDeleteNode, useLineTree, useNodeStatus, useSetActiveQuest, useUpdateNode } from './use-line';
+import { useCreateBatch, useCreateNode, useDeleteNode, useLineTree, useNodeStatus, useSetActiveQuest, useUpdateNode } from './use-line';
 
 export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: string | undefined }) {
   const navigate = useNavigate({ from: '/line/$lineId' });
   const tree = useLineTree(lineId);
   const status = useNodeStatus(lineId);
   const createNode = useCreateNode(lineId);
+  const createBatch = useCreateBatch(lineId);
   const updateNode = useUpdateNode(lineId);
   const deleteNode = useDeleteNode(lineId);
   const setActive = useSetActiveQuest(lineId);
@@ -43,6 +45,12 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
   const [expandedQuests, setExpandedQuests] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<TreeNode | null>(null);
   const [completingAll, setCompletingAll] = useState<TreeNode | null>(null);
+  const [pasted, setPasted] = useState<{
+    parentId: string;
+    kind: DraftKind;
+    parsed: ParsedList;
+    returnFocus: HTMLElement;
+  } | null>(null);
   const today = localToday();
 
   // Пока пользователь ничего не раскрывал, открыта глава с активным квестом (docs/ux.md).
@@ -75,6 +83,8 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
     },
     run: (node, action) => status.mutate({ node, action }),
     create: (draft) => createNode.mutate({ ...draft, id: `temp-${crypto.randomUUID()}` }),
+    pasteList: (parentId, kind, text, returnFocus) =>
+      setPasted({ parentId, kind, parsed: parseQuestList(text, kind), returnFocus }),
     // Несохранённый узел сервер ещё не знает: его детали откроются после ответа.
     openDetails: (id) => !id.startsWith('temp-') && void navigate({ search: { quest: id } }),
     askDelete: (node) => setDeleting(node),
@@ -178,8 +188,8 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
 
         {!lineLocked && (
           <div>
-            <InlineAdd kind="chapter" onCreate={(title) => actions.create({ parentId: line.id, kind: 'chapter', title })} />
-            <InlineAdd kind="quest" onCreate={(title) => actions.create({ parentId: line.id, kind: 'quest', title })} />
+            <InlineAdd parentId={line.id} kind="chapter" />
+            <InlineAdd parentId={line.id} kind="quest" />
           </div>
         )}
       </div>
@@ -207,6 +217,18 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
             }
             if (deleting.id === detailsId) void navigate({ search: {}, replace: true });
             deleteNode.mutate({ node: deleting });
+          }}
+        />
+      )}
+      {pasted && (
+        <PastePreviewDialog
+          kind={pasted.kind}
+          parsed={pasted.parsed}
+          returnFocus={pasted.returnFocus}
+          onCancel={() => setPasted(null)}
+          onCreate={() => {
+            createBatch.mutate({ parentId: pasted.parentId, kind: pasted.kind, drafts: withTempIds(pasted.parsed.drafts) });
+            setPasted(null);
           }}
         />
       )}

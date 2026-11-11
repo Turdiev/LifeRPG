@@ -174,4 +174,19 @@ export const ru = {
       restored: 'Восстановлено',
     },
   },
+  paste: {
+    summary: (list: string) => `Будет создано: ${list}`,
+    nouns: {
+      chapter: { one: 'глава', few: 'главы', many: 'глав' },
+      quest: { one: 'задание', few: 'задания', many: 'заданий' },
+      step: { one: 'этап', few: 'этапа', many: 'этапов' },
+    },
+    description: 'Каждая строка станет элементом, строка с отступом — вложенным в предыдущую.',
+    flattened: 'Строки глубже этапа добавятся этапами.',
+    truncated: 'Длинные названия обрезаны до 120 символов.',
+    tooMany: (max: number, count: number) => `За раз можно добавить не больше ${max} элементов, а здесь ${count}.`,
+    previewLabel: 'Что будет создано',
+    create: 'Создать',
+    cancel: 'Отмена',
+  },
 } as const;

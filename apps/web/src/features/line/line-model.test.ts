@@ -5,9 +5,11 @@ import {
   applyStatusLocally,
   buildLineView,
   descendantCount,
+  insertDraftsLocally,
   insertLocally,
   mergeResponse,
   removeLocally,
+  withTempIds,
   type TreeNode,
 } from './line-model';
 
@@ -294,6 +296,30 @@ describe('insertLocally ordering', () => {
 
     const steps = buildLineView(merged.nodes, null)!.quests.items[0]!.steps.items.map((s) => s.node.title);
     expect(steps).toEqual(['S1', 'first', 'second']);
+  });
+});
+
+describe('insertDraftsLocally', () => {
+  it('inserts the pasted tree as pending nodes with kinds derived from the top level', () => {
+    const data = tree([
+      ['L', null, 'line', 'done'],
+      ['C', 'L', 'chapter', 'done'],
+    ]);
+    const drafts = withTempIds([
+      { title: 'Задание', children: [{ title: 'Этап 1', children: [] }, { title: 'Этап 2', children: [] }] },
+    ]);
+
+    const next = insertDraftsLocally(data, 'C', 'quest', drafts, NOW);
+    const view = buildLineView(next.nodes, null)!;
+    const quest = view.chapters.items[0]!.quests.items[0]!;
+
+    expect(drafts.every((d) => d.id.startsWith('temp-'))).toBe(true);
+    expect([quest.node.kind, quest.node.title]).toEqual(['quest', 'Задание']);
+    expect(quest.steps.items.map((s) => [s.node.kind, s.node.title])).toEqual([
+      ['step', 'Этап 1'],
+      ['step', 'Этап 2'],
+    ]);
+    expect([statusOf(next, 'C'), statusOf(next, 'L')]).toEqual(['open', 'open']);
   });
 });
 

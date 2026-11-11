@@ -10,17 +10,25 @@ import {
   applyResume,
   DomainError,
   isBranchLocked,
+  kindAtDepth,
   type Change,
   type CompleteOptions,
   type Tree,
 } from '@life-rpg/domain';
-import type { CreateQuestRequest, MoveQuestRequest, MutationResponse, UpdateQuestRequest } from '@life-rpg/shared';
-import { generateKeyBetween } from 'fractional-indexing';
+import type {
+  CreateBatchRequest,
+  CreateQuestRequest,
+  MoveQuestRequest,
+  MutationResponse,
+  UpdateQuestRequest,
+} from '@life-rpg/shared';
+import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
 import type { Db, Tx } from '../db/client';
 import {
   deleteQuest as deleteQuestRow,
   findLineNodes,
   insertQuest,
+  insertQuests,
   toQuest,
   touchQuest,
   updateFields,
@@ -80,6 +88,51 @@ export async function createQuest(db: Db, userId: string, body: CreateQuestReque
     await insertQuest(tx, userId, record);
     await updateStatuses(tx, userId, changes);
     return respond(tx, userId, applyChanges([...nodes, record], changes), [record.id, ...ids(changes)]);
+  });
+}
+
+type BatchDraft = { title: string; children: readonly BatchDraft[] };
+
+/** Вставленный список (tech-spec, правило 8): всё поддерево одной транзакцией и одной вставкой. */
+export async function createBatch(db: Db, userId: string, body: CreateBatchRequest): Promise<MutationResponse> {
+  return db.transaction(async (tx) => {
+    const { quest: parent, nodes, tree } = await lockLineOf(tx, userId, body.parentId);
+    const records: QuestRecord[] = [];
+    const updatedAt = new Date().toISOString();
+
+    const place = (drafts: readonly BatchDraft[], parentId: string, depth: number, after: string | null) => {
+      const kind = kindAtDepth(body.kind, depth);
+      if (!kind) throw new DomainError('invalid_parent');
+      const keys = generateNKeysBetween(after, null, drafts.length);
+      drafts.forEach((draft, index) => {
+        const record: QuestRecord = {
+          id: crypto.randomUUID(),
+          lineId: parent.lineId,
+          parentId,
+          kind,
+          status: 'open',
+          position: keys[index]!,
+          title: draft.title,
+          description: null,
+          deadline: null,
+          completedAt: null,
+          updatedAt,
+        };
+        records.push(record);
+        if (draft.children.length > 0) place(draft.children, record.id, depth + 1, null);
+      });
+    };
+    place(body.items, parent.id, 0, tree.children.get(parent.id)?.at(-1)?.position ?? null);
+
+    // Вложенность и блокировку ветки домен проверяет на первом узле: остальные виды выведены
+    // из него, а открытый ребёнок открывает выполненных предков один раз.
+    const changes = applyAddChild(tree, records[0]!, updatedAt);
+    await insertQuests(tx, userId, records);
+    await updateStatuses(tx, userId, changes);
+    return respond(tx, userId, applyChanges([...nodes, ...records], changes), [
+      ...records.map((record) => record.id),
+      ...ids(changes),
+    ]);
   });
 }
 
@@ -147,6 +200,8 @@ async function respond(
   lineNodes: readonly QuestRecord[],
   changedIds: readonly string[],
 ): Promise<MutationResponse> {
-  const changed = changedIds.map((id) => lineNodes.find((node) => node.id === id)!).map(toQuest);
+  // Вставка списка возвращает сотни узлов: поиск по Map, а не перебором всей линии.
+  const byId = new Map(lineNodes.map((node) => [node.id, node]));
+  const changed = changedIds.map((id) => toQuest(byId.get(id)!));
   return { changed, ...(await reconcileActiveQuest(tx, userId, lineNodes)) };
 }
