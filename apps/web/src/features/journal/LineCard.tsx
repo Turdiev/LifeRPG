@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Progress } from '@/shared/ui/progress';
-import { formatDeadline, isOverdue, percent } from './journal-model';
+import { formatDeadline, isOverdue, percent } from '@/shared/lib/format';
 import type { LineChangeAction } from './use-journal';
 
 type LineCardProps = {
