@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canBeActive, isBranchLocked, nextOpenChild, nextQuest } from './active-quest';
+import { canBeActive, isBranchLocked, nextOpenChild, nextQuest, suggestQuests } from './active-quest';
 import { chapter, line, makeTree, quest, step } from './testing';
 
 describe('canBeActive', () => {
@@ -160,5 +160,54 @@ describe('nextQuest', () => {
     const tree = makeTree(line('L', [chapter('C1', [quest('Current'), quest('Sibling')], 'paused'), chapter('C2', [quest('Q2')])]));
 
     expect(nextQuest(tree, 'Current')).toBe('Q2');
+  });
+});
+
+describe('suggestQuests', () => {
+  it('takes the first open quest of each line, in the given order of lines', () => {
+    const lines = [
+      makeTree(line('A', [quest('A1'), quest('A2')])),
+      makeTree(line('B', [quest('B1')])),
+      makeTree(line('C', [quest('C1')])),
+      makeTree(line('D', [quest('D1')])),
+    ];
+
+    expect(suggestQuests(lines, 3)).toEqual(['A1', 'B1', 'C1']);
+  });
+
+  it('fills the remaining places with the following quests of the same lines, line by line', () => {
+    const lines = [makeTree(line('A', [quest('A1'), quest('A2'), quest('A3')])), makeTree(line('B', [quest('B1'), quest('B2')]))];
+
+    expect(suggestQuests(lines, 3)).toEqual(['A1', 'B1', 'A2']);
+    expect(suggestQuests(lines, 5)).toEqual(['A1', 'B1', 'A2', 'B2', 'A3']);
+  });
+
+  it('orders quests of a line like nextQuest: chapters first, then quests placed directly in the line', () => {
+    const lines = [makeTree(line('L', [quest('Direct'), chapter('C1', [quest('Q1')]), chapter('C2', [quest('Q2')])]))];
+
+    expect(suggestQuests(lines, 3)).toEqual(['Q1', 'Q2', 'Direct']);
+  });
+
+  it('suggests only quests that can be active', () => {
+    const lines = [
+      makeTree(
+        line('L', [
+          chapter('C1', [quest('Done', [], 'done'), quest('Cancelled', [], 'cancelled'), quest('Open')]),
+          chapter('Paused', [quest('InPaused')], 'paused'),
+          chapter('CancelledChapter', [quest('InCancelled')], 'cancelled'),
+        ]),
+      ),
+      makeTree(line('PausedLine', [quest('InPausedLine')], 'paused')),
+    ];
+
+    expect(suggestQuests(lines, 3)).toEqual(['Open']);
+  });
+
+  it('skips lines without open quests and returns an empty list when there is nothing to suggest', () => {
+    const lines = [makeTree(line('Empty')), makeTree(line('AllDone', [quest('Q', [], 'done')], 'done')), makeTree(line('B', [quest('B1')]))];
+
+    expect(suggestQuests(lines, 3)).toEqual(['B1']);
+    expect(suggestQuests([makeTree(line('Empty'))], 3)).toEqual([]);
+    expect(suggestQuests([], 3)).toEqual([]);
   });
 });

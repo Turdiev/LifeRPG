@@ -131,3 +131,27 @@ export const mutationResponseSchema = z.object({
   suggestion: questRefSchema.optional(),
 });
 export type MutationResponse = z.infer<typeof mutationResponseSchema>;
+
+/** Предложение «Выбери квест»: путь к линии нужен карточке, чтобы было понятно, из какой цели задание. */
+export const suggestionSchema = questRefSchema.extend({ lineId: z.uuid(), lineTitle: z.string() });
+
+/**
+ * Экран «Сегодня» одним запросом. `active.nodes` — всё дерево линии активного квеста в форме
+ * `GET /lines/:id/tree`: клиент засевает им кеш дерева и отмечает этапы теми же мутациями,
+ * что и на экране линии. Предложения — только когда активного квеста нет, не больше трёх.
+ */
+export const todayResponseSchema = z.object({
+  active: z
+    .object({
+      questId: z.uuid(),
+      lineId: z.uuid(),
+      nodes: lineTreeResponseSchema.shape.nodes,
+    })
+    .nullable(),
+  /** Остальные линии в работе, в порядке журнала. */
+  otherLines: z.array(lineSummarySchema),
+  suggestions: z.array(suggestionSchema),
+  /** Отличают «целей нет» от «все цели на паузе» и «в работе ничего нет». */
+  counts: linesResponseSchema.shape.counts,
+});
+export type TodayResponse = z.infer<typeof todayResponseSchema>;

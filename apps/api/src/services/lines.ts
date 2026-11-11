@@ -1,4 +1,4 @@
-import { buildTree, progress, type QuestNode, type QuestStatus } from '@life-rpg/domain';
+import { buildTree, progress, type QuestNode, type QuestStatus, type Tree } from '@life-rpg/domain';
 import type { CreateLineRequest, LineTreeResponse, LinesResponse, MutationResponse } from '@life-rpg/shared';
 import { generateKeyBetween } from 'fractional-indexing';
 import type { Db } from '../db/client';
@@ -16,6 +16,19 @@ import { getActiveQuestId } from '../db/settings-repository';
 import { NotFoundError } from '../errors';
 
 export async function listLines(db: Db, userId: string, status: QuestStatus): Promise<LinesResponse> {
+  const { lines } = await loadLines(db, userId, status);
+  return { lines: lines.map(({ summary }) => summary), counts: await countLinesByStatus(db, userId) };
+}
+
+type LineSummary = LinesResponse['lines'][number];
+type LoadedLine = { summary: LineSummary; nodes: QuestRecord[]; tree: Tree };
+
+/** Линии статуса с деревьями, в порядке журнала; «Сегодня» строит по тем же деревьям предложения. */
+export async function loadLines(
+  db: Db,
+  userId: string,
+  status: QuestStatus,
+): Promise<{ lines: LoadedLine[]; activeQuestId: string | null }> {
   const lines = await findLines(db, userId, status);
   const nodes = await findNodesOfLines(
     db,
@@ -44,7 +57,7 @@ export async function listLines(db: Db, userId: string, status: QuestStatus): Pr
       hasActiveQuest: lineNodes.some((node) => node.id === activeQuestId),
     };
     const lastChangedAt = lineNodes.reduce((latest, node) => (node.updatedAt > latest ? node.updatedAt : latest), '');
-    return { summary, lastChangedAt, position: line.position };
+    return { summary, nodes: lineNodes, tree, lastChangedAt, position: line.position };
   });
 
   // docs/ux.md, журнал: первой — линия с активным квестом, остальные — по последнему изменению.
@@ -54,7 +67,7 @@ export async function listLines(db: Db, userId: string, status: QuestStatus): Pr
       compare(b.lastChangedAt, a.lastChangedAt) ||
       compare(a.position, b.position),
   );
-  return { lines: summaries.map(({ summary }) => summary), counts: await countLinesByStatus(db, userId) };
+  return { lines: summaries.map(({ summary, nodes, tree }) => ({ summary, nodes, tree })), activeQuestId };
 }
 
 function chapterPosition(lineChildren: readonly QuestNode[]): { current: number; total: number } | null {
@@ -94,9 +107,10 @@ export async function getLineTree(db: Db, userId: string, lineId: string): Promi
   // Для id задания или главы `line_id = id` ничего не найдёт — тоже 404.
   if (!nodes.some((node) => node.id === lineId)) throw new NotFoundError();
 
-  const tree = buildTree(nodes);
-  return {
-    nodes: nodes.map((node) => ({ ...toQuest(node), progress: progress(tree, node.id) })),
-    activeQuestId: await getActiveQuestId(db, userId),
-  };
+  return { nodes: withProgress(nodes, buildTree(nodes)), activeQuestId: await getActiveQuestId(db, userId) };
+}
+
+/** Плоский список узлов с прогрессом каждого — в такой форме дерево принимает клиент. */
+export function withProgress(nodes: readonly QuestRecord[], tree: Tree): LineTreeResponse['nodes'] {
+  return nodes.map((node) => ({ ...toQuest(node), progress: progress(tree, node.id) }));
 }
