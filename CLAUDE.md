@@ -78,6 +78,10 @@ pnpm db:seed            # тестовый пользователь dev-user в 
 pnpm --filter @life-rpg/api cf-typegen   # перегенерировать worker-configuration.d.ts после правки wrangler.jsonc
 ```
 
+Компонент shadcn добавляй из `apps/web`: `pnpm dlx shadcn@4.23.0 add <имя>`. CLI сам дописывает в
+`package.json` пакеты `cn` и `next-themes` — убери их, а импорт `from "cn"` замени на `@/shared/lib/utils`;
+подписи на английском переведи через `src/shared/strings/ru.ts`.
+
 Клиент открывай по `http://127.0.0.1:5173` (Vite слушает IPv4); `/api/*` проксируется на wrangler.
 
 ## Архитектурные правила

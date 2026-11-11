@@ -1,10 +1,21 @@
+import '@fontsource/philosopher/700.css';
+import './styles/globals.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { routeTree } from './routeTree.gen';
+import { ApiError } from './shared/api/client';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Ответ 4xx при повторе не изменится; сбой сети или 5xx — повторяем один раз.
+      retry: (failureCount, error) => failureCount < 1 && !(error instanceof ApiError && error.status < 500),
+      staleTime: 30_000,
+    },
+  },
+});
 const router = createRouter({ routeTree });
 
 declare module '@tanstack/react-router' {

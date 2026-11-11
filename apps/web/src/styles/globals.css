@@ -1,0 +1,177 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * Варианты состояний Radix, на которые опираются компоненты shadcn (`data-open:` и т. д.).
+ * Взяты из shadcn/tailwind.css, чтобы не тянуть пакет shadcn в зависимости ради одного файла.
+ */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/*
+ * docs/ux.md, «Визуальная основа»: пергамент в светлой теме, сине-серая ночь в тёмной.
+ * Золото (--quest) — единственный яркий цвет, только у активного квеста; зелень — только
+ * у галочки и прогресса; просрочка — охра, не красный.
+ */
+:root {
+  --background: #f2ecdf;
+  --foreground: #2a2620;
+  --card: #f8f4ec;
+  --card-foreground: #2a2620;
+  --popover: #f8f4ec;
+  --popover-foreground: #2a2620;
+  --primary: #2a2620;
+  --primary-foreground: #f8f4ec;
+  --secondary: #e6dfcf;
+  --secondary-foreground: #2a2620;
+  --muted: #e6dfcf;
+  --muted-foreground: #6e665a;
+  --accent: #e6dfcf;
+  --accent-foreground: #2a2620;
+  --destructive: #9c3d2e;
+  --border: #d9d0bd;
+  --input: #cfc5b0;
+  --ring: #8a7f6c;
+  --quest: #b8862b;
+  --quest-foreground: #7a5810;
+  --success: #4f7a4a;
+  --overdue: #9a5212;
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1b2230;
+    --foreground: #e6e1d6;
+    --card: #232c3d;
+    --card-foreground: #e6e1d6;
+    --popover: #232c3d;
+    --popover-foreground: #e6e1d6;
+    --primary: #e6e1d6;
+    --primary-foreground: #1b2230;
+    --secondary: #2d3749;
+    --secondary-foreground: #e6e1d6;
+    --muted: #2d3749;
+    --muted-foreground: #a39c8e;
+    --accent: #2d3749;
+    --accent-foreground: #e6e1d6;
+    --destructive: #e07a62;
+    --border: #344055;
+    --input: #3d4a61;
+    --ring: #8b95a8;
+    --quest: #d9a84a;
+    --quest-foreground: #e9c37a;
+    --success: #7fb07a;
+    --overdue: #e08a3c;
+  }
+}
+
+@theme inline {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Philosopher", Georgia, serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-quest: var(--quest);
+  --color-quest-foreground: var(--quest-foreground);
+  --color-success: var(--success);
+  --color-overdue: var(--overdue);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: light dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    line-height: 1.4;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+    line-height: 1.2;
+  }
+}

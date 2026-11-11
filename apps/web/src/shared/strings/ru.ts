@@ -1,5 +1,14 @@
 // Все тексты интерфейса живут в файлах строк: по-русски, кавычки «ёлочки», апостроф ’.
+// Голос рассказчика — в заголовках, тостах и пустых состояниях; кнопки и поля — обычным языком.
 export const ru = {
+  common: {
+    close: 'Закрыть',
+  },
+  tabs: {
+    label: 'Разделы',
+    today: 'Сегодня',
+    journal: 'Журнал',
+  },
   today: {
     title: 'Сегодня',
     stub: 'Здесь появится активный квест — этап 5 плана.',
@@ -10,5 +19,83 @@ export const ru = {
     ok: 'всё работает',
     dbDown: 'сервер отвечает, база недоступна',
     unreachable: 'сервер недоступен',
+  },
+  journal: {
+    title: 'Журнал квестов',
+    filtersLabel: 'Какие цели показать',
+    filters: {
+      open: 'В работе',
+      paused: 'На паузе',
+      done: 'Завершённые',
+      cancelled: 'Отменённые',
+    },
+    emptyFirst: {
+      title: 'Здесь начнётся твоя история',
+      text: 'Большая цель становится сюжетной линией: главы, задания, этапы. Начни с одной.',
+      action: 'Создать первую цель',
+    },
+    emptyFilter: {
+      open: 'Сейчас ни одна цель не в работе',
+      paused: 'Ни одна цель не на паузе',
+      done: 'Пока ни одна цель не завершена',
+      cancelled: 'Отменённых целей нет',
+    },
+    loadError: 'Не удалось загрузить журнал',
+    retry: 'Повторить',
+    newLine: 'Новая цель',
+    activeQuest: 'Активный квест',
+    deadline: (date: string) => `до ${date}`,
+    chapter: (current: number, total: number) => `Глава ${current} из ${total}`,
+    progress: (percent: number) => `${percent}%`,
+    progressLabel: (title: string) => `Прогресс цели «${title}»`,
+  },
+  lineMenu: {
+    open: (title: string) => `Действия с целью «${title}»`,
+    rename: 'Переименовать',
+    pause: 'Поставить на паузу',
+    resume: 'Возобновить',
+    cancel: 'Отменить цель',
+    restore: 'Восстановить',
+    delete: 'Удалить',
+  },
+  lineForm: {
+    createTitle: 'Новая цель',
+    createDescription: 'Назови цель так, как скажешь её себе. Детали можно добавить позже.',
+    editTitle: 'Изменить цель',
+    editDescription: 'Название, описание и дедлайн цели.',
+    title: 'Название',
+    titlePlaceholder: 'Пробежать полумарафон к маю',
+    description: 'Описание',
+    deadline: 'Дедлайн',
+    create: 'Создать цель',
+    save: 'Сохранить',
+    cancel: 'Отмена',
+  },
+  deleteLine: {
+    title: 'Удалить цель?',
+    withChildren: (title: string, count: number, noun: string) =>
+      `Цель «${title}» и ${count} ${noun} внутри будут удалены. Это нельзя отменить.`,
+    single: (title: string) => `Цель «${title}» будет удалена. Это нельзя отменить.`,
+    withUnknown: (title: string) => `Цель «${title}» и всё, что в ней есть, будут удалены. Это нельзя отменить.`,
+    elements: { one: 'элемент', few: 'элемента', many: 'элементов' },
+    confirm: 'Удалить',
+    cancel: 'Отмена',
+  },
+  toasts: {
+    region: 'Уведомления',
+    paused: 'Цель на паузе',
+    resumed: 'Цель снова в работе',
+    cancelled: 'Цель отменена',
+    restored: 'Цель восстановлена',
+    deleted: 'Удалено',
+    undo: 'Вернуть',
+    saveFailed: 'Не удалось сохранить',
+    retry: 'Повторить',
+  },
+  line: {
+    back: 'К журналу',
+    stub: 'Дерево цели появится в следующем шаге этапа 4.',
+    loadError: 'Не удалось загрузить цель',
+    notFound: 'Такой цели нет',
   },
 } as const;

@@ -13,10 +13,10 @@ function TodayPage() {
   const health = useQuery({ queryKey: ['health'], queryFn: fetchHealth });
 
   return (
-    <main>
-      <h1>{ru.today.title}</h1>
+    <section className="space-y-3">
+      <h1 className="text-2xl">{ru.today.title}</h1>
       <p>{ru.today.stub}</p>
-      <p>
+      <p className="text-sm text-muted-foreground">
         {ru.health.label}:{' '}
         {health.isPending
           ? ru.health.checking
@@ -26,7 +26,7 @@ function TodayPage() {
               ? ru.health.ok
               : ru.health.dbDown}
       </p>
-    </main>
+    </section>
   );
 }
 
