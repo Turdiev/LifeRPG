@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { LineFormSheet } from '@/features/journal/LineFormSheet';
 import type { TreeNode } from '@/features/line/line-model';
 import { useNodeStatus } from '@/features/line/use-line';
@@ -9,7 +9,8 @@ import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PickQuest } from './PickQuest';
 import { QuestCard } from './QuestCard';
-import { buildTodayView, closedByComplete, greeting, todayState, type TodayState } from './today-model';
+import { NextQuestCard } from './NextQuestCard';
+import { buildTodayView, closedByComplete, greeting, nextQuestView, todayState, type TodayState } from './today-model';
 import { GoalLink, TodayLines } from './TodayLines';
 import { useActiveLineTree, useTakeQuest, useToday } from './use-today';
 
@@ -22,6 +23,9 @@ export function TodayPage() {
   // Квест, закрытый на этом экране: сервер снимает его с активных, а карточка остаётся
   // с галочками, пока не появится новый активный квест или пользователь не уйдёт с экрана.
   const [closed, setClosed] = useState<QuestRef | null>(null);
+  // Квест, который взяли кнопкой на этом экране: кнопка исчезает вместе со старой карточкой,
+  // поэтому фокус переходит на заголовок новой.
+  const [takenId, setTakenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   if (today.isPending) return showSkeleton ? <TodaySkeleton /> : null;
@@ -45,29 +49,40 @@ export function TodayPage() {
   // лишнего кадра со старой карточкой (React, «Adjusting state when a prop changes»).
   if (active && closed && active.questId !== closed.questId) setClosed(null);
   const shown = active ?? closed;
+  const takingId = take.isPending ? take.variables.questId : null;
+  const takeQuest = (questId: string, lineId: string) => {
+    setTakenId(questId);
+    take.mutate({ questId, lineId });
+  };
+  const noActive = data.active ? null : (
+    <NoActiveQuest
+      state={todayState(data)}
+      data={data}
+      takingId={takingId}
+      onTake={({ id, lineId }) => takeQuest(id, lineId)}
+      onCreate={() => setCreating(true)}
+    />
+  );
 
   return (
     <div className="space-y-8">
       <TodayHeader />
 
-      {shown && (
+      {/* После закрытия квеста карточка сама решает, когда показать «Выбери квест»: сначала — «Следующий квест». */}
+      {shown ? (
         <ActiveQuest
           key={shown.questId}
           quest={shown}
           isActive={active?.questId === shown.questId}
           closedHere={closed?.questId === shown.questId}
           onClosed={() => setClosed(shown)}
+          takenHere={takenId === shown.questId}
+          takingId={takingId}
+          onTake={(questId) => takeQuest(questId, shown.lineId)}
+          noActive={noActive}
         />
-      )}
-
-      {!data.active && (
-        <NoActiveQuest
-          state={todayState(data)}
-          data={data}
-          takingId={take.isPending ? take.variables.questId : null}
-          onTake={({ id, lineId }) => take.mutate({ questId: id, lineId })}
-          onCreate={() => setCreating(true)}
-        />
+      ) : (
+        noActive
       )}
 
       {/* Цель карточки уже видна под ней строкой прогресса — в списке её не повторяем. */}
@@ -99,24 +114,35 @@ type ActiveQuestProps = {
   /** Квест закрыт отметкой на этом экране. */
   closedHere: boolean;
   onClosed: () => void;
+  /** Квест взят кнопкой на этом экране — фокус на его заголовок. */
+  takenHere: boolean;
+  takingId: string | null;
+  /** Взять следующий квест — он всегда из той же линии. */
+  onTake: (questId: string) => void;
+  /** «Выбери квест» или пустое состояние; есть, только когда у сервера нет активного квеста. */
+  noActive: ReactNode;
 };
 
-function ActiveQuest({ quest, isActive, closedHere, onClosed }: ActiveQuestProps) {
+function ActiveQuest({ quest, isActive, closedHere, onClosed, takenHere, takingId, onTake, noActive }: ActiveQuestProps) {
   const tree = useActiveLineTree(quest.lineId);
   const status = useNodeStatus(quest.lineId);
   // Отмеченное здесь остаётся на месте с галочкой, как на экране линии (docs/ux.md, «Решения по UX»).
   const [justDone, setJustDone] = useState<ReadonlySet<string>>(new Set());
+  const [choosingOther, setChoosingOther] = useState(false);
   const view = useMemo(
     () => (tree.data ? buildTodayView(tree.data.nodes, quest.questId, justDone) : null),
     [tree.data, quest.questId, justDone],
   );
   // Дерева нет только при ошибке загрузки или если кеш устарел и задание ещё не пришло: ждём перезапрос.
-  if (!tree.data || !view) return null;
+  if (!tree.data || !view) return noActive;
   const data = tree.data;
   // «Пройден» — по статусу в кеше дерева, а не по колбэкам мутации: откат ошибки и «Повторить»
   // меняют кеш, и карточка следует за ним сама.
   const finished = closedHere && view.quest.status === 'done';
-  if (!isActive && !finished) return null;
+  if (!isActive && !finished) return noActive;
+  // Откат вернул квест в работу: после «Повторить» снова сначала «Следующий квест».
+  if (!finished && choosingOther) setChoosingOther(false);
+  const next = finished ? nextQuestView(data.nodes, quest.questId) : null;
 
   const toggle = (node: TreeNode) => {
     if (node.status === 'done') return status.mutate({ node, action: 'reopen' });
@@ -127,9 +153,32 @@ function ActiveQuest({ quest, isActive, closedHere, onClosed }: ActiveQuestProps
   };
 
   return (
-    <div className="space-y-2">
-      <QuestCard view={view} finished={finished} onToggle={toggle} />
-      <GoalLink line={view.line} progress={view.lineProgress} />
+    <>
+      <div className="space-y-2">
+        <QuestCard view={view} finished={finished} focusTitle={takenHere} onToggle={toggle} />
+        <GoalLink line={view.line} progress={view.lineProgress} />
+        {next && !choosingOther && (
+          <NextQuestCard
+            next={next}
+            taking={takingId === next.quest.id}
+            onTake={() => onTake(next.quest.id)}
+            // Список предложений приходит с ответом `/today` после отметки — до него выбирать не из чего.
+            onChooseOther={noActive ? () => setChoosingOther(true) : null}
+          />
+        )}
+      </div>
+      {finished && (!next || choosingOther) && (choosingOther ? <FocusOnMount>{noActive}</FocusOnMount> : noActive)}
+    </>
+  );
+}
+
+/** После «Выбрать другой» карточка исчезает — фокус переходит на список, который её сменил. */
+function FocusOnMount({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => ref.current?.focus(), []);
+  return (
+    <div ref={ref} tabIndex={-1} className="outline-none">
+      {children}
     </div>
   );
 }

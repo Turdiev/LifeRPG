@@ -1,7 +1,7 @@
 import type { Quest, TodayResponse } from '@life-rpg/shared';
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@/features/line/line-model';
-import { buildTodayView, closedByComplete, greeting, todayState } from './today-model';
+import { buildTodayView, closedByComplete, greeting, nextQuestView, todayState } from './today-model';
 
 // Компактное дерево: [id, parentId, kind, status?]; позиции растут в порядке перечисления.
 function nodes(rows: [string, string | null, Quest['kind'], Quest['status']?][]): TreeNode[] {
@@ -148,6 +148,43 @@ describe('closedByComplete', () => {
 
     expect(closedByComplete(tree, 'Leaf', NOW)).toEqual(['Leaf']);
     expect(closedByComplete(tree, 'S2', NOW)).toContain('Q');
+  });
+});
+
+describe('nextQuestView', () => {
+  it('suggests the next open quest by the nextQuest rule, with its chapter', () => {
+    const data = nodes([
+      ['L', null, 'line'],
+      ['C1', 'L', 'chapter'],
+      ['Done', 'C1', 'quest', 'done'],
+      ['C2', 'L', 'chapter'],
+      ['Next', 'C2', 'quest'],
+      ['Direct', 'L', 'quest'],
+    ]);
+
+    const next = nextQuestView(data, 'Done')!;
+
+    expect(next.quest.id).toBe('Next');
+    expect(next.chapter?.id).toBe('C2');
+  });
+
+  it('has no chapter for a quest placed directly in the line', () => {
+    const data = nodes([
+      ['L', null, 'line'],
+      ['Done', 'L', 'quest', 'done'],
+      ['Direct', 'L', 'quest'],
+    ]);
+
+    expect(nextQuestView(data, 'Done')).toMatchObject({ quest: { id: 'Direct' }, chapter: null });
+  });
+
+  it('returns null when nothing else in the line can be taken', () => {
+    const data = nodes([
+      ['L', null, 'line', 'done'],
+      ['Done', 'L', 'quest', 'done'],
+    ]);
+
+    expect(nextQuestView(data, 'Done')).toBeNull();
   });
 });
 

@@ -16,14 +16,23 @@ type QuestCardProps = {
   view: TodayQuestView;
   /** Квест только что закрыт на этом экране: карточка остаётся с галочками, но уже не отмечается. */
   finished: boolean;
+  /** Квест только что взят кнопкой, которая исчезла вместе с прошлой карточкой: фокус — на заголовок. */
+  focusTitle: boolean;
   onToggle: (node: TreeNode) => void;
 };
 
 /** Карточка активного квеста — единственное место с золотом на экране (docs/ux.md, «Цвета статусов»). */
-export function QuestCard({ view, finished, onToggle }: QuestCardProps) {
+export function QuestCard({ view, finished, focusTitle, onToggle }: QuestCardProps) {
   const { quest, line, chapter, steps } = view;
   const cardRef = useRef<HTMLElement>(null);
   const doneRef = useRef<HTMLParagraphElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+
+  // `focusTitle` у карточки не меняется (она пересоздаётся по ключу квеста), поэтому эффект
+  // срабатывает только при появлении — и только если фокус потерялся вместе с прошлой карточкой.
+  useEffect(() => {
+    if (focusTitle && document.activeElement === document.body) titleRef.current?.focus();
+  }, [focusTitle]);
 
   // Отмеченный с клавиатуры чекбокс становится неактивным, а кнопка «Квест выполнен» исчезает —
   // фокус ушёл бы в никуда. Переводим его на «Квест пройден», только если он был в карточке.
@@ -37,10 +46,22 @@ export function QuestCard({ view, finished, onToggle }: QuestCardProps) {
     <article
       ref={cardRef}
       aria-labelledby={`quest-${quest.id}`}
-      className={cn('rounded-xl border bg-card p-4', finished ? 'border-success/60' : 'border-quest ring-1 ring-quest')}
+      className={cn(
+        'relative overflow-hidden rounded-xl border bg-card p-4 transition-colors duration-500 motion-reduce:transition-none',
+        finished ? 'border-success/60' : 'border-quest ring-1 ring-quest',
+      )}
     >
+      {/* Блик появляется вместе с «Квест пройден» и проходит по карточке один раз. Начальный сдвиг
+          задаёт fill-mode `both` анимации: класс `-translate-x-full` в Tailwind v4 — отдельное
+          свойство `translate`, оно сложилось бы с `transform` из keyframes, и блик застыл бы на карточке. */}
+      {finished && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent via-quest/20 to-transparent motion-safe:animate-quest-shimmer motion-reduce:hidden"
+        />
+      )}
       <p className="text-sm text-muted-foreground">{chapter ? ru.today.path(line.title, chapter.title) : line.title}</p>
-      <h2 id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 text-xl break-words">
+      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 text-xl break-words outline-none">
         <Swords className={cn('mt-1 size-5 shrink-0', finished ? 'text-muted-foreground' : 'text-quest')} aria-hidden />
         {!finished && <span className="sr-only">{ru.today.activeQuest}: </span>}
         <span className="min-w-0 flex-1">{quest.title}</span>

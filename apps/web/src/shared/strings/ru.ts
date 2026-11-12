@@ -26,6 +26,11 @@ export const ru = {
     stepsLabel: (title: string) => `Этапы квеста «${title}»`,
     completeQuest: 'Квест выполнен',
     questDone: 'Квест пройден',
+    next: {
+      title: (title: string) => `Следующий квест: ${title}`,
+      take: 'Взять',
+      other: 'Выбрать другой',
+    },
     // Неразрывные пробелы: процент не отрывается от названия при переносе.
     goal: (title: string, percent: number) => `${title}\u00a0·\u00a0${percent}%`,
     openGoal: (title: string, percent: number) => `Открыть цель «${title}», выполнено ${percent}%`,

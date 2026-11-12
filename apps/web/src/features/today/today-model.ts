@@ -1,4 +1,4 @@
-import { buildTree, nextOpenChild, progress, type Progress } from '@life-rpg/domain';
+import { buildTree, nextOpenChild, nextQuest, progress, type Progress } from '@life-rpg/domain';
 import type { LineTreeResponse, TodayResponse } from '@life-rpg/shared';
 import { applyStatusLocally, type TreeNode } from '@/features/line/line-model';
 
@@ -68,6 +68,20 @@ export function closedByComplete(data: LineTreeResponse, id: string, now: string
   return applyStatusLocally(data, id, 'complete', now)
     .nodes.filter((node) => node.status === 'done' && before.get(node.id) !== 'done')
     .map((node) => node.id);
+}
+
+export type NextQuestView = { quest: TreeNode; chapter: TreeNode | null };
+
+/**
+ * «Следующий квест: …» после закрытия активного (F-13). Считается из кеша дерева тем же
+ * `nextQuest`, что и `suggestion` в ответе сервера: карточке не нужен ответ конкретной мутации.
+ */
+export function nextQuestView(nodes: readonly TreeNode[], afterQuestId: string): NextQuestView | null {
+  const nextId = nextQuest(buildTree(nodes), afterQuestId);
+  const quest = nextId === null ? undefined : nodes.find((node) => node.id === nextId);
+  if (!quest) return null;
+  const parent = nodes.find((node) => node.id === quest.parentId);
+  return { quest, chapter: parent?.kind === 'chapter' ? parent : null };
 }
 
 /** Что показать, когда активного квеста нет (docs/ux.md, «Сегодня», «Состояния»). */
