@@ -1,5 +1,7 @@
 import { buildTree, canBeActive, isBranchLocked } from '@life-rpg/domain';
-import { useEffect, useEffectEvent, useState } from 'react';
+import { XIcon } from 'lucide-react';
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
+import { useIsDesktop } from '@/shared/hooks/use-media-query';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
@@ -19,32 +21,80 @@ type NodeDetailsSheetProps = {
 };
 
 /**
- * Лист деталей открывается по адресу `?quest=` — работают «Назад» и ссылки (tech-spec, «Маршруты»).
- * Правка на месте, сохранение при потере фокуса (docs/ux.md, «Взаимодействия»).
+ * Детали открываются по адресу `?quest=` — работают «Назад» и ссылки (tech-spec, «Маршруты»).
+ * Правка на месте, сохранение при потере фокуса (docs/ux.md, «Взаимодействия»). На телефоне —
+ * лист снизу, на компьютере — панель справа от дерева (docs/ux.md, «Карта экранов»).
  */
 export function NodeDetailsSheet({ node, nodes, activeQuestId, onClose, onSave, onMakeActive }: NodeDetailsSheetProps) {
+  const isDesktop = useIsDesktop();
+  // key пересоздаёт поля, когда детали переключают на другой узел.
+  const details = (variant: DetailsVariant, current: TreeNode) => (
+    <Details
+      key={current.id}
+      variant={variant}
+      node={current}
+      nodes={nodes}
+      activeQuestId={activeQuestId}
+      onSave={onSave}
+      onMakeActive={onMakeActive}
+    />
+  );
+
+  if (isDesktop) return node ? <DetailsPanel key={node.id} onClose={onClose}>{details('panel', node)}</DetailsPanel> : null;
   return (
     <Sheet open={node !== undefined} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="mx-auto max-h-[90dvh] max-w-[640px] overflow-y-auto rounded-t-xl">
-        {node && (
-          // key пересоздаёт поля, когда лист переключают на другой узел.
-          <Details
-            key={node.id}
-            node={node}
-            nodes={nodes}
-            activeQuestId={activeQuestId}
-            onSave={onSave}
-            onMakeActive={onMakeActive}
-          />
-        )}
+        {node && details('sheet', node)}
       </SheetContent>
     </Sheet>
   );
 }
 
+/**
+ * Немодальная панель: дерево рядом остаётся доступным. `data-details-panel` — сигнал корневому
+ * layout освободить под панель место справа. Фокус переходит в панель при открытии и возвращается
+ * туда, откуда её открыли, — как у листа, где это делает Radix.
+ */
+function DetailsPanel({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLElement>(null);
+  // Ref, а не локальная переменная эффекта: в StrictMode эффект запускается дважды, и второй
+  // запуск увидел бы фокус уже в самой панели.
+  const opener = useRef<Element | null>(null);
+  useEffect(() => {
+    opener.current ??= document.activeElement;
+    ref.current?.focus();
+    return () => {
+      // Esc, «Закрыть» или «Назад» уносят фокус вместе с панелью. Если пользователь сам кликнул
+      // в дерево (переключение на другой узел), фокус уже там — не трогаем.
+      if (document.activeElement !== document.body) return;
+      if (opener.current instanceof HTMLElement && opener.current.isConnected) opener.current.focus();
+    };
+  }, []);
+  return (
+    <aside
+      ref={ref}
+      data-details-panel
+      tabIndex={-1}
+      aria-labelledby={DETAILS_TITLE_ID}
+      onKeyDown={(event) => event.key === 'Escape' && onClose()}
+      className="fixed inset-y-0 right-0 z-30 flex w-80 flex-col gap-4 overflow-y-auto border-l bg-popover pt-4 text-sm text-popover-foreground outline-none"
+    >
+      {children}
+      <Button variant="ghost" size="icon" className="absolute top-3 right-3" onClick={onClose}>
+        <XIcon aria-hidden />
+        <span className="sr-only">{ru.common.close}</span>
+      </Button>
+    </aside>
+  );
+}
+
+const DETAILS_TITLE_ID = 'node-details-title';
+type DetailsVariant = 'sheet' | 'panel';
 type FieldsBody = { title?: string; description?: string | null; deadline?: string | null };
 
-function Details({ node, nodes, activeQuestId, onSave, onMakeActive }: Omit<NodeDetailsSheetProps, 'onClose' | 'node'> & { node: TreeNode }) {
+type DetailsProps = Omit<NodeDetailsSheetProps, 'onClose' | 'node'> & { node: TreeNode; variant: DetailsVariant };
+
+function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: DetailsProps) {
   const { run, askDelete } = useLineActions();
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
@@ -74,15 +124,29 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive }: Omit<Node
   const showMakeActive =
     !isPending(node) && node.kind === 'quest' && node.id !== activeQuestId && canBeActive(tree, node.id);
 
+  const meta = (
+    <>
+      {ru.line.details.kind[node.kind]}
+      {path.length > 0 && <span className="block">{path.join(' › ')}</span>}
+    </>
+  );
+
   return (
     <>
-      <SheetHeader>
-        <SheetDescription>
-          {ru.line.details.kind[node.kind]}
-          {path.length > 0 && <span className="block">{path.join(' › ')}</span>}
-        </SheetDescription>
-        <SheetTitle className="sr-only">{node.title}</SheetTitle>
-      </SheetHeader>
+      {/* Заголовок листа — часть Radix Dialog и вне диалога не работает; у панели — обычный header. */}
+      {variant === 'sheet' ? (
+        <SheetHeader>
+          <SheetDescription>{meta}</SheetDescription>
+          <SheetTitle className="sr-only">{node.title}</SheetTitle>
+        </SheetHeader>
+      ) : (
+        <header className="px-4 pr-14 text-muted-foreground">
+          <h2 id={DETAILS_TITLE_ID} className="sr-only">
+            {node.title}
+          </h2>
+          <p>{meta}</p>
+        </header>
+      )}
 
       <div className="grid gap-4 px-4 pb-4">
         <div className="grid gap-2">

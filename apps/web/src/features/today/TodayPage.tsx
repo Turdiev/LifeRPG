@@ -1,9 +1,10 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { LineFormSheet } from '@/features/journal/LineFormSheet';
 import type { TreeNode } from '@/features/line/line-model';
 import { useNodeStatus } from '@/features/line/use-line';
 import { useDelayedFlag } from '@/shared/hooks/use-delayed-flag';
+import { useIsDesktop } from '@/shared/hooks/use-media-query';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
@@ -27,6 +28,14 @@ export function TodayPage() {
   // поэтому фокус переходит на заголовок новой.
   const [takenId, setTakenId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  // На телефоне уход с экрана размонтирует его вместе с карточкой; постоянная колонка на компьютере
+  // сбрасывает её при переходе в соседней колонке — поведение раскладок одно.
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const [visitPath, setVisitPath] = useState(pathname);
+  if (pathname !== visitPath) {
+    setVisitPath(pathname);
+    setClosed(null);
+  }
 
   if (today.isPending) return showSkeleton ? <TodaySkeleton /> : null;
   // Неудачный фоновый перезапрос при данных в кеше экран не прячет.
@@ -97,12 +106,14 @@ export function TodayPage() {
 }
 
 function TodayHeader() {
+  // На компьютере «Сегодня» — колонка рядом с журналом или линией: главный заголовок страницы у них.
+  const Heading = useIsDesktop() ? 'h2' : 'h1';
   const now = new Date();
   const date = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
   return (
     <header className="space-y-1">
       <p className="text-sm text-muted-foreground first-letter:uppercase">{date}</p>
-      <h1 className="text-2xl">{ru.today.greeting[greeting(now.getHours())]}</h1>
+      <Heading className="text-2xl">{ru.today.greeting[greeting(now.getHours())]}</Heading>
     </header>
   );
 }
@@ -126,8 +137,16 @@ type ActiveQuestProps = {
 function ActiveQuest({ quest, isActive, closedHere, onClosed, takenHere, takingId, onTake, noActive }: ActiveQuestProps) {
   const tree = useActiveLineTree(quest.lineId);
   const status = useNodeStatus(quest.lineId);
-  // Отмеченное здесь остаётся на месте с галочкой, как на экране линии (docs/ux.md, «Решения по UX»).
+  // Отмеченное здесь остаётся на месте с галочкой «до следующего открытия экрана» (docs/ux.md,
+  // «Решения по UX»). На телефоне экран и так закрывается при переходе; на компьютере колонка
+  // постоянная, поэтому «новое открытие» — переход в соседней колонке.
   const [justDone, setJustDone] = useState<ReadonlySet<string>>(new Set());
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const [donePath, setDonePath] = useState(pathname);
+  if (pathname !== donePath) {
+    setDonePath(pathname);
+    setJustDone(new Set());
+  }
   const [choosingOther, setChoosingOther] = useState(false);
   const view = useMemo(
     () => (tree.data ? buildTodayView(tree.data.nodes, quest.questId, justDone) : null),
