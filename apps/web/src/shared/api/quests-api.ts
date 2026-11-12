@@ -2,6 +2,7 @@ import {
   lineTreeResponseSchema,
   linesResponseSchema,
   mutationResponseSchema,
+  todayResponseSchema,
   type CreateLineRequest,
   type CreateQuestRequest,
   type LinesResponse,
@@ -20,6 +21,10 @@ export function fetchLines(status: QuestStatus) {
 
 export function fetchTree(lineId: string) {
   return apiRequest('GET', `/lines/${encodeURIComponent(lineId)}/tree`, lineTreeResponseSchema);
+}
+
+export function fetchToday() {
+  return apiRequest('GET', '/today', todayResponseSchema);
 }
 
 export function createLine(body: CreateLineRequest) {

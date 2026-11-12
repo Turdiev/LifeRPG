@@ -85,8 +85,9 @@ export function JournalPage({ status }: { status: QuestStatus }) {
         </ul>
       )}
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30">
-        <div className="mx-auto flex max-w-[640px] justify-end px-4">
+      {/* На компьютере окно шире колонки журнала: кнопка прижата к низу колонки, а не центра окна. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 lg:sticky lg:bottom-6">
+        <div className="mx-auto flex max-w-[640px] justify-end px-4 lg:px-0">
           <Button className="pointer-events-auto rounded-full px-5 shadow-md" onClick={() => setForm({ open: true })}>
             <Plus data-icon="inline-start" aria-hidden />
             {ru.journal.newLine}

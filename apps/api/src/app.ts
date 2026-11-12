@@ -8,6 +8,7 @@ import { errorBody, handleError } from './errors';
 import { linesRoutes } from './routes/lines';
 import { meRoutes } from './routes/me';
 import { questsRoutes } from './routes/quests';
+import { todayRoutes } from './routes/today';
 
 export type AppDeps = {
   connectDb: (env: Env) => Promise<DbConnection>;
@@ -53,6 +54,7 @@ export function createApp({ connectDb, devUserId }: AppDeps) {
   app.route('/v1/lines', linesRoutes);
   app.route('/v1/quests', questsRoutes);
   app.route('/v1/me', meRoutes);
+  app.route('/v1/today', todayRoutes);
 
   return app;
 }
