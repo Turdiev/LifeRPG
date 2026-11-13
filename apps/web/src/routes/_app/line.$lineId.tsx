@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { LinePage } from '@/features/line/LinePage';
 
 // `?quest=` открывает лист деталей узла (tech-spec, «Маршруты»).
-export const Route = createFileRoute('/line/$lineId')({
+export const Route = createFileRoute('/_app/line/$lineId')({
   validateSearch: (search: Record<string, unknown>): { quest?: string } =>
     typeof search['quest'] === 'string' ? { quest: search['quest'] } : {},
   component: function LineRoute() {

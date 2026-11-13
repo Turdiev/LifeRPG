@@ -1,13 +1,28 @@
 import '@fontsource/philosopher/700.css';
 import './styles/globals.css';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { routeTree } from './routeTree.gen';
 import { ApiError } from './shared/api/client';
+import { RouteError } from './shared/ui/RouteError';
+
+/**
+ * Сессия истекла или её отозвали: кеш с данными прошлого входа стираем целиком (на устройстве
+ * может войти другой человек) и уводим на вход. Сюда приходят ошибки всех запросов и мутаций.
+ */
+function onApiError(error: Error) {
+  if (!(error instanceof ApiError) || error.status !== 401) return;
+  // Первый `clear` — до перехода, иначе `/login` возьмёт сессию из кеша и вернёт обратно. Второй —
+  // после: откат оптимистичной мутации срабатывает уже после этого обработчика и вернул бы в кеш снимок.
+  queryClient.clear();
+  void router.navigate({ to: '/login', replace: true }).then(() => queryClient.clear());
+}
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: onApiError }),
+  mutationCache: new MutationCache({ onError: onApiError }),
   defaultOptions: {
     queries: {
       // Ответ 4xx при повторе не изменится; сбой сети или 5xx — повторяем один раз.
@@ -16,7 +31,8 @@ const queryClient = new QueryClient({
     },
   },
 });
-const router = createRouter({ routeTree });
+// queryClient — в контексте роутера: защищённые маршруты проверяют сессию в beforeLoad через тот же кеш.
+const router = createRouter({ routeTree, context: { queryClient }, defaultErrorComponent: RouteError });
 
 declare module '@tanstack/react-router' {
   interface Register {

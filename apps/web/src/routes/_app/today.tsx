@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from '@tanstack/react-router';
 import { TodayPage } from '@/features/today/TodayPage';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
 
-export const Route = createFileRoute('/today')({
+export const Route = createFileRoute('/_app/today')({
   component: TodayRoute,
 });
 

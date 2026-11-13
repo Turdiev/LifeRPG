@@ -147,6 +147,18 @@ describe('/api/auth/*', () => {
   });
 });
 
+describe('a broken Google callback', () => {
+  it('redirects to the sign-in screen with an error, not to the built-in error page of Better Auth', async () => {
+    // Нет cookie состояния OAuth — так бывает, если вход начали в другом браузере или cookie потерялась.
+    const res = await createTestServer().request('/api/auth/callback/google?code=x&state=unknown', {}, testEnv);
+
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.get('location')!, testEnv.BETTER_AUTH_URL);
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('error')).toBeTruthy();
+  });
+});
+
 describe('first sign-in', () => {
   it('creates default user settings', async () => {
     const { userId } = await signUpTestUser();

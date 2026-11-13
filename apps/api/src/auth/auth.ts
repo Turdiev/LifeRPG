@@ -34,6 +34,9 @@ export function createAuth<Plugins extends BetterAuthPlugin[] = []>(env: AuthEnv
     // Better Auth ищет IP в x-forwarded-for, а Worker получает его в cf-connecting-ip: без этого
     // у всех пользователей был бы один ключ лимита, и чужие запросы блокировали бы вход любому.
     advanced: { ipAddress: { ipAddressHeaders: ['cf-connecting-ip'] } },
+    // Ошибки callback до разбора state (потерянная cookie, подменённый state) Better Auth по умолчанию
+    // ведёт на свою страницу /api/auth/error, а не на errorCallbackURL клиента — уводим на экран входа.
+    onAPIError: { errorURL: '/login' },
     databaseHooks: {
       // tech-spec, «Вход», п. 3: при первом входе создаётся строка user_settings.
       user: { create: { after: async (created) => createSettings(db, created.id) } },
