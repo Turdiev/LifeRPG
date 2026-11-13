@@ -186,7 +186,7 @@ REST под префиксом `/api/v1`, JSON, сессия в cookie; люба
 - **Валидация:** тело и параметры каждого запроса проверяются Zod-схемой из `packages/shared`; та же схема типизирует клиент.
 - **Ответ мутации:** `{ changed: QuestNode[], activeQuestId: string | null, suggestion?: { id, title } }`; созданный узел тоже входит в `changed`. Если удалили само активное задание, ссылка просто сбрасывается, без предложения; если удаление закрыло активное задание (ушёл его последний открытый этап), предложение есть, как после выполнения.
 - **Дерево линии** (`GET /lines/:id/tree`) отдаётся плоским списком узлов с `progress` у каждого — в таком виде его принимает `buildTree` на клиенте.
-- **Ошибки:** `{ error: { code, message, details? } }` с HTTP-кодами 400 (`validation_failed`), 401 (`unauthorized`: нет сессии), 404 (`not_found`: нет узла или чужой), 409 (`branch_locked`, `has_open_children`, `invalid_parent`, `invalid_transition`), 413 (`payload_too_large`, тело `POST /quests/batch` больше 128 КБ), 500 (`internal_error`).
+- **Ошибки:** `{ error: { code, message, details? } }` с HTTP-кодами 400 (`validation_failed`), 401 (`unauthorized`: нет сессии), 403 (`forbidden`: изменяющий запрос с чужого сайта), 404 (`not_found`: нет узла или чужой), 409 (`branch_locked`, `has_open_children`, `invalid_parent`, `invalid_transition`), 413 (`payload_too_large`, тело `POST /quests/batch` больше 128 КБ), 500 (`internal_error`).
 - **Чужие данные** всегда отвечают 404, а не 403, чтобы не раскрывать существование чужих id.
 - **Идемпотентность:** повторный `complete` уже выполненного узла не ошибка, а пустой `changed` — это важно для повторов из очереди без сети.
 
@@ -240,7 +240,7 @@ Layout `_app` (все экраны, кроме `/login`) проверяет се
 
 - **Cookie:** `httpOnly`, `Secure`, `SameSite=Lax`; клиент и API на одном адресе, поэтому cookie обычные, first-party.
 - **Изоляция данных:** все репозитории принимают `userId` обязательным параметром; интеграционные тесты проверяют, что чужой id всегда даёт 404.
-- **CORS не нужен:** клиент и API на одном origin, запросы с других origin отклоняются.
+- **CORS не нужен:** клиент и API на одном origin, запросы с других origin отклоняются: изменяющие запросы к `/api/v1` проверяет `csrf()` из Hono (Origin или Sec-Fetch-Site), `/api/auth` — Better Auth.
 - **Ограничение частоты:** встроенный лимит Better Auth на эндпоинтах входа.
 - **Секреты** (Google Client ID и Client Secret, строка подключения к базе, секрет Better Auth) — в секретах Worker (`wrangler secret`) и GitHub Actions, не в репозитории.
 - **Заголовки:** `secureHeaders` из Hono, Content Security Policy для клиента.
@@ -326,6 +326,7 @@ E2E-тесты на Playwright и сбор ошибок в Sentry вынесен
 
 | Дата | Решение | Почему |
 | --- | --- | --- |
+| 2026-11-14 | `csrf()` из Hono на `/api/v1` после проверки сессии: не-GET запрос с чужого Origin — `403 forbidden` | `SameSite=Lax` уже закрывает атаку, но запросы без тела (`complete`, `pause`, `DELETE`) чужой сайт отправит обычной формой — проверка Origin страхует, если когда-нибудь появится «тот же сайт» на соседнем поддомене своего домена |
 | 2026-11-14 | Клиент: сессия — запрос `['session']` в TanStack Query через ванильный клиент `better-auth/client` (без `useSession`); защищённые экраны — под pathless-layout `_app` с проверкой в `beforeLoad`; любой ответ 401 и выход стирают весь кеш и ведут на `/login` | Серверные данные только в TanStack Query (CLAUDE.md); на одном устройстве может войти другой человек — данные прошлого аккаунта не должны остаться в кеше |
 | 2026-11-14 | `/settings` пока только с аккаунтом и «Выйти»; иконка настроек — в шапке журнала | Вибрация и звук требуют `GET/PATCH /me/settings`, их в этапе 6 нет; выход нужен, чтобы проверить два аккаунта |
 | 2026-11-13 | Таблицы Better Auth — в `schema.ts` и миграциях drizzle-kit, а не миграциями Better Auth | Один набор миграций: CI на этапе 7 гоняет только drizzle-kit, а внешние ключи `quests` и `user_settings` уже ссылаются на `user` |

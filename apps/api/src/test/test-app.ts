@@ -62,6 +62,8 @@ export async function createTestApp() {
   function request(path: string, init: RequestInit): Promise<Response> {
     const headers = new Headers(init.headers);
     headers.set('cookie', cookie);
+    // Как браузер на адресе приложения: без Origin запрос без тела отклонил бы csrf() (csrf.test.ts).
+    if (!headers.has('origin')) headers.set('origin', new URL(TEST_AUTH_ENV.BETTER_AUTH_URL).origin);
     return Promise.resolve(app.request(`/api/v1${path}`, { ...init, headers }, testEnv));
   }
 

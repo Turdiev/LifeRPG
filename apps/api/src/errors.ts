@@ -22,6 +22,10 @@ export const handleError: ErrorHandler = (error, c) => {
   if (error instanceof HTTPException && error.status === 400) {
     return c.json(errorBody('validation_failed', error.message), 400);
   }
+  // Так отвечает только csrf(): запрос с чужого сайта. Чужие данные — по-прежнему 404, не 403.
+  if (error instanceof HTTPException && error.status === 403) {
+    return c.json(errorBody('forbidden', 'Cross-site request rejected'), 403);
+  }
   console.error(JSON.stringify({ message: 'unhandled error', error: String(error), stack: error.stack }));
   return c.json(errorBody('internal_error', 'Internal error'), 500);
 };
