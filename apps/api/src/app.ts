@@ -1,6 +1,7 @@
 import { healthResponseSchema, type HealthResponse } from '@life-rpg/shared';
 import { sql } from 'drizzle-orm';
 import { Hono } from 'hono';
+import { csrf } from 'hono/csrf';
 import { secureHeaders } from 'hono/secure-headers';
 import type { AppEnv } from './app-env';
 import type { AuthService } from './auth/auth';
@@ -70,6 +71,14 @@ export function createApp({ connectDb, createAuth }: AppDeps) {
       await close();
     }
   });
+
+  // tech-spec, «Безопасность»: запросы с других origin отклоняются. Основная защита — cookie
+  // SameSite=Lax; это второй рубеж для запросов без тела (complete, pause, DELETE), которые чужой
+  // сайт отправит обычной формой. После проверки сессии: без входа ответ — 401, как и раньше.
+  app.use(
+    '/v1/*',
+    csrf({ origin: (origin, c) => origin === new URL((c.env as Env).BETTER_AUTH_URL).origin }),
+  );
 
   app.route('/v1/lines', linesRoutes);
   app.route('/v1/quests', questsRoutes);

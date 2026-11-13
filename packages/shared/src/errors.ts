@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const errorCodeSchema = z.enum([
   'validation_failed',
   'unauthorized',
+  'forbidden',
   'not_found',
   'branch_locked',
   'has_open_children',
