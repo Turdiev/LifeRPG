@@ -1,10 +1,10 @@
 import { createApp } from './app';
+import { authService, createAuth } from './auth/auth';
 import { connectDb } from './db/client';
-import { DEV_USER_ID } from './dev-user';
 
 const app = createApp({
   connectDb: (env) => connectDb(env.HYPERDRIVE.connectionString),
-  devUserId: DEV_USER_ID,
+  createAuth: (env, db) => authService(createAuth(env, db)),
 });
 
 export default app;

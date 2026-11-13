@@ -74,7 +74,7 @@ pnpm lint               # ESLint
 pnpm db:up / db:down    # локальный PostgreSQL (docker compose)
 pnpm db:generate        # drizzle-kit: новая миграция из apps/api/src/db/schema.ts
 pnpm db:migrate         # применить миграции к ЛОКАЛЬНОЙ базе (drizzle.config.ts отказывается работать с не-локальным хостом)
-pnpm db:seed            # тестовый пользователь dev-user в локальной базе (до входа через Google, этап 6)
+pnpm db:adopt-dev-user  # разово перенести локальные данные dev-user на свой аккаунт Google
 pnpm --filter @life-rpg/api cf-typegen   # перегенерировать worker-configuration.d.ts после правки wrangler.jsonc
 ```
 
@@ -119,5 +119,6 @@ pnpm --filter @life-rpg/api cf-typegen   # перегенерировать work
 
 ## Текущий этап
 
-Этап 5 «Сегодня» из раздела «План реализации» в `docs/tech-spec.md`.
+Этап 7 «Выпуск» из раздела «План реализации» в `docs/tech-spec.md`. Этап 5 «Сегодня» ждёт критерия готовности:
+неделя отметок этапов только с экрана «Сегодня».
 Обновляй этот раздел, когда этап закрыт.

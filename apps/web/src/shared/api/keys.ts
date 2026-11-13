@@ -8,4 +8,5 @@ export const queryKeys = {
   lines: (status: QuestStatus) => ['lines', status] as const,
   tree: (lineId: string) => ['tree', lineId] as const,
   today: ['today'] as const,
+  session: ['session'] as const,
 };

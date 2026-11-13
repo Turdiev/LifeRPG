@@ -21,7 +21,12 @@ export async function clearActiveQuestIf(ex: Executor, userId: string, questId: 
     .where(and(eq(userSettings.userId, userId), eq(userSettings.activeQuestId, questId)));
 }
 
-/** Строка настроек появляется при первой записи; до этапа 6 её никто не создаёт заранее. */
+/** Настройки по умолчанию при первом входе; повторный вызов ничего не меняет. */
+export async function createSettings(ex: Executor, userId: string): Promise<void> {
+  await ex.insert(userSettings).values({ userId }).onConflictDoNothing();
+}
+
+/** Upsert, а не update: запись не должна зависеть от того, создал ли вход строку настроек. */
 export async function setActiveQuestId(ex: Executor, userId: string, questId: string | null): Promise<void> {
   await ex
     .insert(userSettings)

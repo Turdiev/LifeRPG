@@ -1,0 +1,8 @@
+# Образец apps/api/.dev.vars для `pnpm dev`: скопируй в .dev.vars и заполни. Сам .dev.vars в git не попадает.
+# Адрес, по которому открываешь клиент: callback Google — <BETTER_AUTH_URL>/api/auth/callback/google.
+BETTER_AUTH_URL="http://127.0.0.1:5173"
+# Случайная строка от 32 символов, например: openssl rand -base64 32
+BETTER_AUTH_SECRET=""
+# OAuth-клиент «Web application» в Google Cloud Console.
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""

@@ -28,6 +28,25 @@ describe("another user's quest", () => {
     expect(await owner.tree(line.id)).toEqual(before);
   });
 
+  it('is 404 when read, used as a parent or made active by another user', async () => {
+    const owner = await createTestApp();
+    const stranger = await createTestApp();
+    const line = await owner.createLine();
+    const quest = await owner.createQuest(line.id, 'quest');
+    const before = await owner.tree(line.id);
+
+    const results = await Promise.all([
+      stranger.call('GET', `/lines/${line.id}/tree`),
+      stranger.call('POST', '/quests', { parentId: line.id, kind: 'quest', title: 'чужое' }),
+      stranger.call('POST', '/quests/batch', { parentId: line.id, kind: 'quest', items: [{ title: 'чужое', children: [] }] }),
+      stranger.call('PUT', '/me/active-quest', { questId: quest.id }),
+    ]);
+
+    expect(results.map((r) => r.status)).toEqual([404, 404, 404, 404]);
+    expect(await owner.tree(line.id)).toEqual(before);
+    expect((await stranger.call('GET', '/today')).body).toMatchObject({ active: null });
+  });
+
   it('is not listed among the lines of another user', async () => {
     const owner = await createTestApp();
     const stranger = await createTestApp();

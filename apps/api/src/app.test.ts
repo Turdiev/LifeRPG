@@ -1,16 +1,11 @@
 import { healthResponseSchema } from '@life-rpg/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
-import { connectDb } from './db/client';
-import { TEST_DATABASE_URL } from './test/database';
-
-const env = {} as Env;
+import { createTestApp, createTestServer, testEnv } from './test/test-app';
 
 describe('GET /api/health', () => {
   it('returns 200 and db "up" when the database answers', async () => {
-    const app = createApp({ connectDb: () => connectDb(TEST_DATABASE_URL), devUserId: 'unused' });
-
-    const res = await app.request('/api/health', {}, env);
+    const res = await createTestServer().request('/api/health', {}, testEnv);
 
     expect(res.status).toBe(200);
     expect(healthResponseSchema.parse(await res.json())).toEqual({ status: 'ok', db: 'up' });
@@ -22,10 +17,12 @@ describe('GET /api/health', () => {
       connectDb: async () => {
         throw new Error('connection refused');
       },
-      devUserId: 'unused',
+      createAuth: () => {
+        throw new Error('unused');
+      },
     });
 
-    const res = await app.request('/api/health', {}, env);
+    const res = await app.request('/api/health', {}, testEnv);
 
     expect(res.status).toBe(503);
     expect(healthResponseSchema.parse(await res.json())).toEqual({ status: 'error', db: 'down' });
@@ -34,9 +31,9 @@ describe('GET /api/health', () => {
 
 describe('unknown routes', () => {
   it('answer 404 in the error format', async () => {
-    const app = createApp({ connectDb: () => connectDb(TEST_DATABASE_URL), devUserId: 'unused' });
+    const t = await createTestApp();
 
-    const res = await app.request('/api/v1/nothing', {}, env);
+    const res = await t.request('/nothing', {});
 
     expect(res.status).toBe(404);
     expect(await res.json()).toMatchObject({ error: { code: 'not_found' } });

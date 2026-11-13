@@ -10,63 +10,95 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as JournalRouteImport } from './routes/journal'
-import { Route as TodayRouteImport } from './routes/today'
-import { Route as LineLineIdRouteImport } from './routes/line.$lineId'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppJournalRouteImport } from './routes/_app/journal'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppTodayRouteImport } from './routes/_app/today'
+import { Route as AppLineLineIdRouteImport } from './routes/_app/line.$lineId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const JournalRoute = JournalRouteImport.update({
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppJournalRoute = AppJournalRouteImport.update({
   id: '/journal',
   path: '/journal',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const TodayRoute = TodayRouteImport.update({
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTodayRoute = AppTodayRouteImport.update({
   id: '/today',
   path: '/today',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
-const LineLineIdRoute = LineLineIdRouteImport.update({
+const AppLineLineIdRoute = AppLineLineIdRouteImport.update({
   id: '/line/$lineId',
   path: '/line/$lineId',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/journal': typeof JournalRoute
-  '/today': typeof TodayRoute
-  '/line/$lineId': typeof LineLineIdRoute
+  '/login': typeof LoginRoute
+  '/journal': typeof AppJournalRoute
+  '/settings': typeof AppSettingsRoute
+  '/today': typeof AppTodayRoute
+  '/line/$lineId': typeof AppLineLineIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/journal': typeof JournalRoute
-  '/today': typeof TodayRoute
-  '/line/$lineId': typeof LineLineIdRoute
+  '/login': typeof LoginRoute
+  '/journal': typeof AppJournalRoute
+  '/settings': typeof AppSettingsRoute
+  '/today': typeof AppTodayRoute
+  '/line/$lineId': typeof AppLineLineIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/journal': typeof JournalRoute
-  '/today': typeof TodayRoute
-  '/line/$lineId': typeof LineLineIdRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/journal': typeof AppJournalRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/today': typeof AppTodayRoute
+  '/_app/line/$lineId': typeof AppLineLineIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/journal' | '/today' | '/line/$lineId'
+  fullPaths:
+    '/' | '/login' | '/journal' | '/settings' | '/today' | '/line/$lineId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/journal' | '/today' | '/line/$lineId'
-  id: '__root__' | '/' | '/journal' | '/today' | '/line/$lineId'
+  to: '/' | '/login' | '/journal' | '/settings' | '/today' | '/line/$lineId'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/journal'
+    | '/_app/settings'
+    | '/_app/today'
+    | '/_app/line/$lineId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  JournalRoute: typeof JournalRoute
-  TodayRoute: typeof TodayRoute
-  LineLineIdRoute: typeof LineLineIdRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,35 +110,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/journal': {
-      id: '/journal'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/journal': {
+      id: '/_app/journal'
       path: '/journal'
       fullPath: '/journal'
-      preLoaderRoute: typeof JournalRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppJournalRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/today': {
-      id: '/today'
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/today': {
+      id: '/_app/today'
       path: '/today'
       fullPath: '/today'
-      preLoaderRoute: typeof TodayRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppTodayRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/line/$lineId': {
-      id: '/line/$lineId'
+    '/_app/line/$lineId': {
+      id: '/_app/line/$lineId'
       path: '/line/$lineId'
       fullPath: '/line/$lineId'
-      preLoaderRoute: typeof LineLineIdRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppLineLineIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface AppRouteChildren {
+  AppJournalRoute: typeof AppJournalRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppTodayRoute: typeof AppTodayRoute
+  AppLineLineIdRoute: typeof AppLineLineIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppJournalRoute: AppJournalRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppTodayRoute: AppTodayRoute,
+  AppLineLineIdRoute: AppLineLineIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  JournalRoute: JournalRoute,
-  TodayRoute: TodayRoute,
-  LineLineIdRoute: LineLineIdRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

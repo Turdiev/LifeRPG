@@ -1,6 +1,6 @@
 import type { LinesResponse } from '@life-rpg/shared';
-import { useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Plus, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { LineSummary, QuestStatus } from '@/shared/api/quests-api';
 import { useDelayedFlag } from '@/shared/hooks/use-delayed-flag';
@@ -28,7 +28,15 @@ export function JournalPage({ status }: { status: QuestStatus }) {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl">{ru.journal.title}</h1>
+      {/* Настройки — иконка в шапке журнала, отдельной вкладки нет (docs/ux.md, «Карта экранов»). */}
+      <header className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl">{ru.journal.title}</h1>
+        <Button asChild variant="ghost" size="icon" className="-mr-2">
+          <Link to="/settings" aria-label={ru.settings.open}>
+            <Settings aria-hidden />
+          </Link>
+        </Button>
+      </header>
 
       <ToggleGroup
         type="single"

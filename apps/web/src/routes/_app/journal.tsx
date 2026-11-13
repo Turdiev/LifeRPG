@@ -3,7 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { JournalPage } from '@/features/journal/JournalPage';
 
 // Фильтр живёт в адресе (`/journal?status=open`), чтобы работали закладки и «Назад».
-export const Route = createFileRoute('/journal')({
+export const Route = createFileRoute('/_app/journal')({
   validateSearch: (search: Record<string, unknown>) => ({
     status: questStatusSchema.catch('open').parse(search['status']),
   }),
