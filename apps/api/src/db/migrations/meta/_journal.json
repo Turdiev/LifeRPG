@@ -15,6 +15,13 @@
       "when": 1794344750883,
       "tag": "0001_user_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794587007659,
+      "tag": "0002_auth_tables",
+      "breakpoints": true
     }
   ]
 }

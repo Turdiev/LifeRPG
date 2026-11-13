@@ -12,6 +12,7 @@
   "dependencies": {
     "@life-rpg/domain": "workspace:*",
     "@life-rpg/shared": "workspace:*",
+    "better-auth": "1.7.14",
     "drizzle-orm": "0.45.4",
     "fractional-indexing": "4.0.0",
     "hono": "4.13.13",

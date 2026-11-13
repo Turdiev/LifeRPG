@@ -41,12 +41,16 @@ PWA-ежедневник, который превращает большую ц�
 pnpm install
 pnpm db:up
 pnpm db:migrate
-pnpm db:seed
 pnpm dev
 ```
 
 `pnpm db:migrate` нужен при первом запуске и после каждой новой миграции; `pnpm dev` сам миграции не применяет.
-`pnpm db:seed` добавляет тестового пользователя `dev-user`: до входа через Google (этап 6) API работает от его имени.
+Вход только через Google, поэтому до первого `pnpm dev` нужны секреты: скопируй [apps/api/.dev.vars.example](apps/api/.dev.vars.example)
+в `apps/api/.dev.vars` и заполни. OAuth-клиент — «Web application» в Google Cloud Console, с адресом
+callback `http://127.0.0.1:5173/api/auth/callback/google`.
+
+Если в локальной базе остались данные тестового пользователя `dev-user` (этапы 3–5), после первого входа
+перенеси их на свой аккаунт: `pnpm db:adopt-dev-user`.
 
 После `pnpm dev` работают:
 
@@ -73,7 +77,7 @@ Vite проксирует на wrangler.
 | `pnpm db:up` / `pnpm db:down` | Запустить / остановить локальный PostgreSQL; данные остаются в именованном томе Docker (см. [docker-compose.yml](docker-compose.yml)), сбросить базу — `docker compose down -v` |
 | `pnpm db:generate` | Сгенерировать миграцию из [apps/api/src/db/schema.ts](apps/api/src/db/schema.ts) |
 | `pnpm db:migrate` | Применить миграции к локальной базе |
-| `pnpm db:seed` | Добавить в локальную базу тестового пользователя `dev-user` |
+| `pnpm db:adopt-dev-user` | Разово перенести локальные данные `dev-user` на единственный аккаунт Google в локальной базе |
 | `pnpm --filter @life-rpg/api cf-typegen` | Перегенерировать `worker-configuration.d.ts` после правки `wrangler.jsonc` |
 
 ## Структура
@@ -82,6 +86,7 @@ Vite проксирует на wrangler.
 apps/
   web/             React-клиент (PWA)
   api/             Hono на Workers: /api/*; с этапа 7 тот же Worker отдаёт и статику клиента
+    src/auth/      Better Auth: вход через Google, сессии
     src/db/        схема Drizzle, клиент БД, миграции
 packages/
   shared/          Zod-схемы запросов и ответов API, общие типы
@@ -96,7 +101,8 @@ docs/              спецификации
   как источник истины, клиент — для мгновенных оптимистичных обновлений.
 - **`packages/shared`** — единственный источник контрактов API: клиент и сервер импортируют Zod-схемы оттуда.
 - **Прогресс не хранится**, а вычисляется при чтении; статусы контейнеров хранятся.
-- **Данные пользователя изолированы:** каждый репозиторий принимает `userId`; чужие данные отдают 404.
+- **Данные пользователя изолированы:** `userId` берётся только из сессии, каждый репозиторий принимает его;
+  без сессии — 401, чужие данные — 404.
 - **Workers — не Node.js:** 10 мс CPU на запрос, Node-API только через `nodejs_compat`.
 
 Подробности и обоснования — в [docs/tech-spec.md](docs/tech-spec.md).

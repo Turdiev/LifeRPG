@@ -3,7 +3,8 @@ import { sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
 import type { AppEnv } from './app-env';
-import type { DbConnection } from './db/client';
+import type { AuthService } from './auth/auth';
+import type { Db, DbConnection } from './db/client';
 import { errorBody, handleError } from './errors';
 import { linesRoutes } from './routes/lines';
 import { meRoutes } from './routes/me';
@@ -12,11 +13,11 @@ import { todayRoutes } from './routes/today';
 
 export type AppDeps = {
   connectDb: (env: Env) => Promise<DbConnection>;
-  /** До этапа 6 пользователь фиксированный; тесты подставляют своего. */
-  devUserId: string;
+  /** Better Auth на запрос; тесты подставляют экземпляр с плагином `testUtils` и своими секретами. */
+  createAuth: (env: Env, db: Db) => AuthService;
 };
 
-export function createApp({ connectDb, devUserId }: AppDeps) {
+export function createApp({ connectDb, createAuth }: AppDeps) {
   const app = new Hono<AppEnv>().basePath('/api');
 
   app.use(secureHeaders());
@@ -40,12 +41,31 @@ export function createApp({ connectDb, devUserId }: AppDeps) {
     }
   });
 
+  // Вход через Google, callback, сессия и выход — обработчики Better Auth (tech-spec, «API»).
+  app.on(['GET', 'POST'], '/auth/*', async (c) => {
+    const { db, close } = await connectDb(c.env);
+    try {
+      return await createAuth(c.env, db).handler(c.req.raw);
+    } finally {
+      await close();
+    }
+  });
+
+  // Любой запрос к данным — только с сессией; userId берётся из неё и больше ниоткуда.
   app.use('/v1/*', async (c, next) => {
     const { db, close } = await connectDb(c.env);
-    c.set('db', db);
-    c.set('userId', devUserId);
     try {
+      const { userId, setCookie } = await createAuth(c.env, db).checkSession(c.req.raw.headers);
+      if (userId === null) {
+        const res = c.json(errorBody('unauthorized', 'Sign in required'), 401);
+        for (const cookie of setCookie) res.headers.append('set-cookie', cookie);
+        return res;
+      }
+      c.set('db', db);
+      c.set('userId', userId);
       await next();
+      // Продлённая сессия: новая cookie уходит с ответом на запрос к данным.
+      for (const cookie of setCookie) c.res.headers.append('set-cookie', cookie);
     } finally {
       await close();
     }
