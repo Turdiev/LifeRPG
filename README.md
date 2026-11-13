@@ -78,6 +78,7 @@ Vite проксирует на wrangler.
 | `pnpm db:generate` | Сгенерировать миграцию из [apps/api/src/db/schema.ts](apps/api/src/db/schema.ts) |
 | `pnpm db:migrate` | Применить миграции к локальной базе |
 | `pnpm db:adopt-dev-user` | Разово перенести локальные данные `dev-user` на единственный аккаунт Google в локальной базе |
+| `pnpm --filter @life-rpg/web icons` | Перегенерировать иконки PWA из [apps/web/public/pwa-icon.svg](apps/web/public/pwa-icon.svg) |
 | `pnpm --filter @life-rpg/api cf-typegen` | Перегенерировать `worker-configuration.d.ts` после правки `wrangler.jsonc` |
 
 ## Структура
