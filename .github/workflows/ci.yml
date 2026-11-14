@@ -40,8 +40,8 @@ jobs:
       # Actions закреплены по SHA (тег рядом): тег можно перевесить, коммит — нет.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Сначала Node из .nvmrc: установщик pnpm 11 запускается Node из PATH, а версия Node
-      # раннера по умолчанию ниже нужной pnpm 11: с обратным порядком шаг падал («self-installer exits with code 1»).
+      # Сначала Node из .nvmrc: установщик pnpm запускается Node из PATH, а pnpm 11 требует Node ≥ 22.13 —
+      # на Node раннера по умолчанию полагаться нельзя.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
