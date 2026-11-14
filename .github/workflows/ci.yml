@@ -40,13 +40,17 @@ jobs:
       # Actions закреплены по SHA (тег рядом): тег можно перевесить, коммит — нет.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Версия pnpm — из поля packageManager в package.json.
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-
+      # Сначала Node из .nvmrc: установщик pnpm 11 запускается Node из PATH, а версия Node
+      # раннера по умолчанию ниже нужной pnpm 11: с обратным порядком шаг падал («self-installer exits with code 1»).
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
-          cache: pnpm
+
+      # Версия pnpm — из поля packageManager в package.json; кеш хранилища — здесь, а не в
+      # setup-node: тому для кеша pnpm уже нужен установленный pnpm.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          cache: true
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
