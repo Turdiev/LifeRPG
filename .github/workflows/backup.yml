@@ -1,0 +1,53 @@
+# tech-spec, «CI/CD»: ежедневная резервная копия продакшен-базы в артефакты, хранение 14 дней.
+# Дамп зашифрован: в нём email и имена пользователей и токены Google из таблицы account, а
+# артефакт может скачать любой, у кого есть доступ к репозиторию. Восстановление — README, «Выпуск».
+name: Backup
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # 02:30 UTC — ночь для тестеров в Европе
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      # pg_dump из того же образа, что локальная база: версия клиента должна быть не ниже сервера Neon.
+      - name: Дамп базы
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          test -n "$DATABASE_URL" || { echo 'Секрет DATABASE_URL не задан'; exit 1; }
+          docker run --rm -e DATABASE_URL postgres:17-alpine \
+            sh -c 'pg_dump --format=custom --no-owner --no-privileges "$DATABASE_URL"' > life-rpg.dump
+
+      # Пароль идёт через stdin, а не аргументом: аргументы видны в списке процессов раннера.
+      - name: Шифрование
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          test -n "$BACKUP_PASSPHRASE" || { echo 'Секрет BACKUP_PASSPHRASE не задан'; exit 1; }
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 \
+            --symmetric --cipher-algo AES256 --output "life-rpg-$(date -u +%F).dump.gpg" life-rpg.dump
+          rm life-rpg.dump
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: db-backup-${{ github.run_number }}
+          path: '*.dump.gpg'
+          retention-days: 14
+          if-no-files-found: error
+          # Зашифрованное не сжимается.
+          compression-level: 0

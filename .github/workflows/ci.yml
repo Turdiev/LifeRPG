@@ -1,13 +1,14 @@
-# tech-spec, «CI/CD»: на каждый пулл-реквест — ESLint, проверка типов, тесты Vitest
-# (интеграционные — с PostgreSQL в сервис-контейнере) и сборка клиента.
+# tech-spec, «CI/CD»: на каждый пулл-реквест и перед каждым деплоем (его вызывает deploy.yml) —
+# ESLint, проверка типов, тесты Vitest (интеграционные — с PostgreSQL в сервис-контейнере) и сборка клиента.
 name: CI
 
 on:
   pull_request:
+  workflow_call:
 
-# Новый пуш в тот же PR отменяет устаревшую проверку.
+# Новый пуш в тот же PR отменяет устаревшую проверку; проверку перед деплоем не отменяет ничто.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 permissions:

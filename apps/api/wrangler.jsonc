@@ -20,8 +20,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Заглушка: настоящий id Hyperdrive создаётся и прописывается на этапе 7 (выпуск),
-      // с отключённым кешем запросов (`wrangler hyperdrive create ... --caching-disabled`).
+      // Заглушка до разовой настройки (README, «Выпуск», шаг 2): id из
+      // `wrangler hyperdrive create ... --caching-disabled`. С нулями деплой падает.
       "id": "00000000000000000000000000000000",
       // Локальный PostgreSQL в Docker из docker-compose.yml (не секрет).
       "localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/life_rpg"
