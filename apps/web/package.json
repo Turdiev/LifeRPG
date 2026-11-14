@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "icons": "pnpm dlx @vite-pwa/assets-generator@2.0.0 --config pwa-assets.config.js"
   },
   "dependencies": {
     "@fontsource/philosopher": "5.3.0",
@@ -32,6 +33,7 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "tailwindcss": "4.3.3",
-    "vite": "8.3.5"
+    "vite": "8.3.5",
+    "vite-plugin-pwa": "2.0.0"
   }
 }

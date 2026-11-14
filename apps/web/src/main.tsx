@@ -40,6 +40,11 @@ declare module '@tanstack/react-router' {
   }
 }
 
+// Открытая вкладка ещё на старой сборке, а после деплоя новый сервис-воркер уже удалил её ленивые
+// чанки: экран линии или настроек не загрузится. Перезагрузка подтянет новую сборку целиком —
+// так советует Vite («Load Error Handling»); в PWA на iOS кнопки перезагрузки нет.
+window.addEventListener('vite:preloadError', () => window.location.reload());
+
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element #root not found');
 

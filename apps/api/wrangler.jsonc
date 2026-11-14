@@ -5,6 +5,14 @@
   "compatibility_date": "2026-10-23",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Один Worker — один адрес (tech-spec, «Архитектура»): собранный клиент отдаётся как статика,
+  // `/api/*` — всегда кодом Worker; любой другой путь без файла — index.html (маршруты SPA).
+  // Собирается `pnpm --filter @life-rpg/web build` до деплоя.
+  "assets": {
+    "directory": "../web/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
   // Значения задаёт автор: локально — apps/api/.dev.vars (образец .dev.vars.example), в проде — wrangler secret put.
   "secrets": {
     "required": ["BETTER_AUTH_URL", "BETTER_AUTH_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"]
@@ -12,8 +20,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Заглушка: настоящий id Hyperdrive создаётся и прописывается на этапе 7 (выпуск),
-      // с отключённым кешем запросов (`wrangler hyperdrive create ... --caching-disabled`).
+      // Заглушка до разовой настройки (README, «Выпуск», шаг 2): id из
+      // `wrangler hyperdrive create ... --caching-disabled`. С нулями деплой падает.
       "id": "00000000000000000000000000000000",
       // Локальный PostgreSQL в Docker из docker-compose.yml (не секрет).
       "localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/life_rpg"

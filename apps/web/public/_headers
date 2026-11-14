@@ -1,0 +1,13 @@
+# Заголовки статики клиента на Cloudflare (Workers Static Assets; файл сам не отдаётся).
+# Ответы /api/* формирует Worker — им заголовки ставит secureHeaders в apps/api.
+#
+# CSP (tech-spec, «Безопасность»): всё — только со своего адреса. style-src 'unsafe-inline' нужен
+# элементам <style>, которые вставляют sonner и react-remove-scroll; inline-скриптов в сборке нет.
+#
+# Долгого кеша для /assets/* нет намеренно: чанки и так лежат в precache сервис-воркера, а промах
+# по старому чанку после деплоя получает SPA-фолбэк index.html — с `immutable` браузер хранил бы
+# эту подмену год. Без правила остаётся `max-age=0, must-revalidate` с ETag.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

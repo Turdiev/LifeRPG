@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Источник иконок PWA (pnpm icons): свиток сюжетной линии на пергаменте, цвета светлой темы.
+       Фон во всю площадь, рисунок в центральных 50 %: так иконка остаётся целой в маске любой формы. -->
+  <rect width="512" height="512" fill="#f2ecdf"/>
+  <g transform="translate(256 256) scale(12.8) translate(-12 -12)" fill="none" stroke="#2a2620" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
+    <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
+  </g>
+</svg>
