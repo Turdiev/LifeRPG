@@ -20,9 +20,8 @@
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
-      // Заглушка до разовой настройки (README, «Выпуск», шаг 2): id из
-      // `wrangler hyperdrive create ... --caching-disabled`. С нулями деплой падает.
-      "id": "00000000000000000000000000000000",
+      // Продакшен: Neon через Hyperdrive без кеша запросов (README, «Выпуск», шаг 2). Не секрет.
+      "id": "a5439b7ce7b74bb0afc31e08757381b5",
       // Локальный PostgreSQL в Docker из docker-compose.yml (не секрет).
       "localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/life_rpg"
     }
