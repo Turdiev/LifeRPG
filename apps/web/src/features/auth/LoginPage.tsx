@@ -28,7 +28,7 @@ export function LoginPage({ failed }: { failed: boolean }) {
     <main className="mx-auto flex min-h-dvh w-full max-w-96 flex-col px-4 pt-[18dvh] pb-[max(2rem,env(safe-area-inset-bottom))] lg:justify-center lg:py-0">
       {/* Свиток — иконка сюжетной линии (docs/ux.md, «Атмосфера»); золото оставлено активному квесту. */}
       <Scroll className="size-8 text-muted-foreground" aria-hidden />
-      <h1 className="mt-4 text-2xl">{ru.login.title}</h1>
+      <h1 className="mt-4 type-display">{ru.login.title}</h1>
       <p className="mt-2 max-w-[36ch] text-muted-foreground">{ru.login.text}</p>
 
       <div className="mt-auto space-y-3 pt-12 lg:mt-0">

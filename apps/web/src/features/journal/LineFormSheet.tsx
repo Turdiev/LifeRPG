@@ -30,7 +30,7 @@ export function LineFormSheet({ open, onOpenChange, line }: LineFormSheetProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="mx-auto max-h-[90dvh] max-w-[640px] overflow-y-auto rounded-t-xl">
         <SheetHeader>
-          <SheetTitle className="text-xl">
+          <SheetTitle>
             {line ? ru.lineForm.editTitle : ru.lineForm.createTitle}
           </SheetTitle>
           <SheetDescription>{line ? ru.lineForm.editDescription : ru.lineForm.createDescription}</SheetDescription>

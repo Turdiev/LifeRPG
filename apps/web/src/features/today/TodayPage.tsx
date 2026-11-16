@@ -113,7 +113,7 @@ function TodayHeader() {
   return (
     <header className="space-y-1">
       <p className="text-sm text-muted-foreground first-letter:uppercase">{date}</p>
-      <Heading className="text-2xl">{ru.today.greeting[greeting(now.getHours())]}</Heading>
+      <Heading className="type-title">{ru.today.greeting[greeting(now.getHours())]}</Heading>
     </header>
   );
 }
@@ -248,7 +248,7 @@ function NoActiveQuest({ state, data, takingId, onTake, onCreate }: NoActiveQues
 function EmptyState({ title, text, children }: { title: string; text: string; children: ReactNode }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-xl">{title}</h2>
+      <h2 className="type-heading">{title}</h2>
       <p className="max-w-[46ch] text-muted-foreground">{text}</p>
       {children}
     </section>

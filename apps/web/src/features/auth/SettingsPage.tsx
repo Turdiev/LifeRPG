@@ -29,11 +29,11 @@ export function SettingsPage() {
         <ChevronLeft className="size-4" aria-hidden />
         {ru.settings.back}
       </Link>
-      <h1 className="text-2xl">{ru.settings.title}</h1>
+      <h1 className="type-display">{ru.settings.title}</h1>
 
       {user && (
         <section aria-labelledby="settings-account" className="space-y-1">
-          <h2 id="settings-account" className="text-sm text-muted-foreground font-sans">
+          <h2 id="settings-account" className="text-sm text-muted-foreground">
             {ru.settings.account}
           </h2>
           <p className="font-medium break-words">{user.name}</p>

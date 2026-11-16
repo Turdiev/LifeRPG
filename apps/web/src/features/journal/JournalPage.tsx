@@ -30,7 +30,7 @@ export function JournalPage({ status }: { status: QuestStatus }) {
     <div className="space-y-5">
       {/* Настройки — иконка в шапке журнала, отдельной вкладки нет (docs/ux.md, «Карта экранов»). */}
       <header className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl">{ru.journal.title}</h1>
+        <h1 className="type-display">{ru.journal.title}</h1>
         <Button asChild variant="ghost" size="icon" className="-mr-2">
           <Link to="/settings" aria-label={ru.settings.open}>
             <Settings aria-hidden />
@@ -74,7 +74,7 @@ export function JournalPage({ status }: { status: QuestStatus }) {
         </div>
       ) : isEmptyJournal(lines.data) ? (
         <div className="space-y-3 py-10">
-          <h2 className="text-xl">{ru.journal.emptyFirst.title}</h2>
+          <h2 className="type-heading">{ru.journal.emptyFirst.title}</h2>
           <p className="max-w-[46ch] text-muted-foreground">{ru.journal.emptyFirst.text}</p>
           <Button onClick={() => setForm({ open: true })}>{ru.journal.emptyFirst.action}</Button>
         </div>

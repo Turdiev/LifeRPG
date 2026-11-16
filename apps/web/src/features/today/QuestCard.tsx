@@ -61,8 +61,8 @@ export function QuestCard({ view, finished, focusTitle, onToggle }: QuestCardPro
         />
       )}
       <p className="text-sm text-muted-foreground">{chapter ? ru.today.path(line.title, chapter.title) : line.title}</p>
-      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 text-xl break-words outline-none">
-        <Swords className={cn('mt-1 size-5 shrink-0', finished ? 'text-muted-foreground' : 'text-quest')} aria-hidden />
+      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 type-display break-words outline-none">
+        <Swords className={cn('mt-2 size-5 shrink-0', finished ? 'text-muted-foreground' : 'text-quest')} aria-hidden />
         {!finished && <span className="sr-only">{ru.today.activeQuest}: </span>}
         <span className="min-w-0 flex-1">{quest.title}</span>
       </h2>
@@ -124,7 +124,7 @@ function StepLine({ step, next, disabled, onToggle }: StepLineProps) {
     <label
       className={cn(
         'flex cursor-pointer items-center gap-3 rounded-lg px-1 has-disabled:cursor-default',
-        next ? 'min-h-14 text-lg' : 'min-h-11',
+        next ? 'min-h-14 text-xl' : 'min-h-11',
         done && 'text-muted-foreground',
       )}
     >

@@ -16,7 +16,7 @@ export function PickQuest({ suggestions, takingId, onTake }: PickQuestProps) {
   return (
     <section aria-labelledby="pick-quest" className="space-y-3">
       <div className="space-y-1">
-        <h2 id="pick-quest" className="text-xl">
+        <h2 id="pick-quest" className="type-heading">
           {ru.today.pick.title}
         </h2>
         <p className="text-muted-foreground">{ru.today.pick.text}</p>

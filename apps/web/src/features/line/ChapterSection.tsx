@@ -28,7 +28,8 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
   return (
     <section className="rounded-xl border bg-card">
       <div className="flex items-center gap-1 pr-1 pl-2">
-        <h2 className="min-w-0 flex-1 text-lg">
+        {/* Не type-heading: глава — пункт списка под заголовком цели, в 20 px она спорила бы с ним. */}
+        <h2 className="min-w-0 flex-1 text-base font-semibold">
           <button
             type="button"
             onClick={onToggle}
@@ -47,7 +48,7 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
             >
               {node.title}
             </span>
-            <span className="shrink-0 font-sans text-sm tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-sm font-normal tabular-nums text-muted-foreground">
               {ru.line.questCount(chapter.questCount.done, chapter.questCount.total)}
             </span>
           </button>

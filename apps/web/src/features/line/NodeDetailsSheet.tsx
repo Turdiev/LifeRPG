@@ -159,7 +159,9 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
             onChange={(event) => setTitle(event.target.value)}
             onBlur={() => (title.trim() ? save() : setTitle(node.title))}
             onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
-            className="h-11 font-heading text-xl"
+            // Размеры роли type-title, но обычными классами: tailwind-merge снимает ими `text-base` и
+            // `md:text-sm` из Input, а самописную роль он не знает — и на компьютере осталось бы 14 px.
+            className="h-11 font-heading text-[1.5625rem] leading-[1.2] font-bold md:text-[1.5625rem]"
           />
         </div>
         <div className="grid gap-2">

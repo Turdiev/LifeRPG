@@ -26,7 +26,7 @@ export function TodayLines({ title, lines }: { title: string; lines: LineSummary
   if (lines.length === 0) return null;
   return (
     <section aria-labelledby="today-lines" className="space-y-2">
-      <h2 id="today-lines" className="text-lg">
+      <h2 id="today-lines" className="type-heading">
         {title}
       </h2>
       <ul>

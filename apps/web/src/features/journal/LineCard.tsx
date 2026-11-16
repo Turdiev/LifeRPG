@@ -38,7 +38,7 @@ export function LineCard({ line, today, onEdit, onChange }: LineCardProps) {
     >
       <div className="flex items-start gap-2">
         <StatusIcon status={line.status} />
-        <h2 className={cn('min-w-0 flex-1 pt-0.5 text-xl break-words', muted && 'text-muted-foreground')}>
+        <h2 className={cn('min-w-0 flex-1 pt-0.5 type-heading break-words', muted && 'text-muted-foreground')}>
           {/* Растянутая ссылка: вся карточка кликабельна, а меню остаётся отдельной кнопкой поверх. */}
           <Link
             to="/line/$lineId"

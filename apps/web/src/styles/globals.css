@@ -57,6 +57,21 @@
   }
 }
 
+/*
+ * Роли заголовков, шкала 1,25: 16 → 20 → 25 → 31 px (docs/ux.md, «Основа»). Роль назначается явно,
+ * а не по тегу: уровень h1–h3 задаёт структуру для скринридера, а не размер. Philosopher — только
+ * от 25 px: мельче его каллиграфические засечки превращаются в шум.
+ */
+@utility type-display {
+  @apply font-heading text-[1.9375rem] leading-[1.15] font-bold;
+}
+@utility type-title {
+  @apply font-heading text-[1.5625rem] leading-[1.2] font-bold;
+}
+@utility type-heading {
+  @apply font-sans text-xl leading-[1.3] font-semibold;
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -131,7 +146,8 @@
 }
 
 @theme inline {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Golos — свой файл, а не системный стек: на Windows, iOS и Android текст должен выглядеть одинаково. */
+  --font-sans: "Golos Text Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Philosopher", Georgia, serif;
 
   --color-background: var(--background);
@@ -184,12 +200,6 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    line-height: 1.4;
-  }
-  h1,
-  h2,
-  h3 {
-    @apply font-heading;
-    line-height: 1.2;
+    line-height: 1.5;
   }
 }

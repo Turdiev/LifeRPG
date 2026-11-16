@@ -138,11 +138,11 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
 
         <header className="space-y-3">
           <div className="flex items-start gap-2">
-            <Scroll className="mt-1.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
-            <h1 className={cn('min-w-0 flex-1 text-2xl break-words', lineLocked && 'text-muted-foreground')}>
+            <Scroll className="mt-2 size-5 shrink-0 text-muted-foreground" aria-hidden />
+            <h1 className={cn('min-w-0 flex-1 type-display break-words', lineLocked && 'text-muted-foreground')}>
               {line.title}
             </h1>
-            <NodeMenu node={line} locked={false} className="-mt-1.5 -mr-2" />
+            <NodeMenu node={line} locked={false} className="-mt-1 -mr-2" />
           </div>
           <div className="flex items-center gap-3">
             <SegmentedProgress
