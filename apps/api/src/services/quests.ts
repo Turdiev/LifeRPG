@@ -70,6 +70,7 @@ export async function createQuest(db: Db, userId: string, body: CreateQuestReque
   return db.transaction(async (tx) => {
     const { quest: parent, nodes, tree } = await lockLineOf(tx, userId, body.parentId);
     const lastSibling = tree.children.get(parent.id)?.at(-1);
+    const now = new Date().toISOString();
     const record: QuestRecord = {
       id: crypto.randomUUID(),
       lineId: parent.lineId,
@@ -81,10 +82,11 @@ export async function createQuest(db: Db, userId: string, body: CreateQuestReque
       description: body.description ?? null,
       deadline: body.deadline ?? null,
       completedAt: null,
-      updatedAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     // Домен проверяет вложенность и блокировку ветки до записи в базу.
-    const changes = applyAddChild(tree, record, new Date().toISOString());
+    const changes = applyAddChild(tree, record, now);
     await insertQuest(tx, userId, record);
     await updateStatuses(tx, userId, changes);
     return respond(tx, userId, applyChanges([...nodes, record], changes), [record.id, ...ids(changes)]);
@@ -116,6 +118,7 @@ export async function createBatch(db: Db, userId: string, body: CreateBatchReque
           description: null,
           deadline: null,
           completedAt: null,
+          createdAt: updatedAt,
           updatedAt,
         };
         records.push(record);

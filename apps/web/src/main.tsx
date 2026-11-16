@@ -1,3 +1,4 @@
+import '@fontsource-variable/golos-text';
 import '@fontsource/philosopher/700.css';
 import './styles/globals.css';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';

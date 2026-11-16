@@ -7,6 +7,8 @@ import type {
 } from '@life-rpg/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useShowCompletion } from '@/features/completion/completion-context';
+import { completionView } from '@/features/completion/completion-model';
 import { queryKeys } from '@/shared/api/keys';
 import {
   completeQuest,
@@ -100,6 +102,8 @@ const statusToast: Partial<Record<NodeAction, string>> = {
 };
 
 export function useNodeStatus(lineId: string) {
+  const queryClient = useQueryClient();
+  const showCompletion = useShowCompletion();
   const mutation = useTreeMutation<StatusVars>(lineId, {
     mutationFn: ({ node, action, withChildren }) => {
       if (action === 'complete') return completeQuest(node.id, withChildren ?? false);
@@ -109,7 +113,14 @@ export function useNodeStatus(lineId: string) {
     optimistic: (data, { node, action, withChildren }) =>
       applyStatusLocally(data, node.id, action, now(), { withChildren }),
     // Отметка видна сама по себе; тост с «Вернуть» — только у паузы, отмены и обратных к ним.
-    onDone: (_response, { node, action }) => {
+    onDone: (response, { node, action }) => {
+      // Экран завершения — по ответу сервера, а не по оптимистичной отметке: поздравление, которое
+      // потом откатит ошибка, хуже задержки в доли секунды (docs/ux.md, «Решения по UX»).
+      if (action === 'complete') {
+        const data = queryClient.getQueryData<LineTreeResponse>(queryKeys.tree(lineId));
+        const view = data && completionView(data, response.changed);
+        if (view) showCompletion(view);
+      }
       const message = statusToast[action];
       const undo = inverse[action];
       if (!message || !undo) return;

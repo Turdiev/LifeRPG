@@ -15,6 +15,12 @@ export const ru = {
     redirecting: 'Открываем Google…',
     failed: 'Google не подтвердил вход. Попробуй ещё раз.',
     startFailed: 'Не получилось начать вход. Проверь интернет и попробуй ещё раз.',
+    // Пример цели под фразой о сути: показывает механику до входа. Цифры глав — в LoginPage.
+    example: {
+      goal: 'Заговорить по-английски к лету',
+      chapters: { grammar: 'Основы грамматики', vocabulary: 'Словарный запас', speaking: 'Разговорная практика' },
+      quest: 'Выучить 50 слов о путешествиях',
+    },
   },
   settings: {
     title: 'Настройки',
@@ -123,7 +129,8 @@ export const ru = {
     editTitle: 'Изменить цель',
     editDescription: 'Название, описание и дедлайн цели.',
     title: 'Название',
-    titlePlaceholder: 'Пробежать полумарафон к маю',
+    // «Например:» — чтобы подсказку не приняли за уже введённое название.
+    titlePlaceholder: 'Например: пробежать полумарафон к маю',
     description: 'Описание',
     deadline: 'Дедлайн',
     create: 'Создать цель',
@@ -139,6 +146,16 @@ export const ru = {
     elements: { one: 'элемент', few: 'элемента', many: 'элементов' },
     confirm: 'Удалить',
     cancel: 'Отмена',
+  },
+  // Экран завершения (F-16): голос рассказчика в заголовке, итоги — обычным языком.
+  completion: {
+    chapter: 'Глава пройдена',
+    line: 'Цель достигнута',
+    days: (count: number, noun: string) => `За ${count} ${noun}`,
+    daysNoun: { one: 'день', few: 'дня', many: 'дней' },
+    quests: (count: number, noun: string) => `Выполнено ${count} ${noun}`,
+    questsNoun: { one: 'задание', few: 'задания', many: 'заданий' },
+    next: 'Дальше',
   },
   toasts: {
     region: 'Уведомления',

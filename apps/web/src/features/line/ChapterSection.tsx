@@ -26,9 +26,11 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
   const contentId = `chapter-${node.id}`;
 
   return (
-    <section className="rounded-xl border bg-card">
-      <div className="flex items-center gap-1 pr-1 pl-2">
-        <h2 className="min-w-0 flex-1 text-lg">
+    // Секция без рамки (docs/ux.md: «раскрываемая секция»): главы отделяет разделитель списка в LinePage.
+    <section className="py-1">
+      <div className="-mr-2 flex items-center gap-1">
+        {/* Не type-heading: глава — пункт списка под заголовком цели, в 20 px она спорила бы с ним. */}
+        <h2 className="min-w-0 flex-1 text-base font-semibold">
           <button
             type="button"
             onClick={onToggle}
@@ -47,7 +49,7 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
             >
               {node.title}
             </span>
-            <span className="shrink-0 font-sans text-sm tabular-nums text-muted-foreground">
+            <span className="shrink-0 text-sm font-normal tabular-nums text-muted-foreground">
               {ru.line.questCount(chapter.questCount.done, chapter.questCount.total)}
             </span>
           </button>
@@ -57,12 +59,12 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
       <Progress
         value={percent(progress)}
         aria-label={ru.line.progressLabel(node.title)}
-        className="mx-3 mb-3 w-auto"
+        className="mb-3"
         indicatorClassName={chapter.locked ? 'bg-muted-foreground/50' : undefined}
       />
 
       {open && (
-        <div id={contentId} className="border-t px-1 py-1">
+        <div id={contentId} className="pb-2 pl-2">
           {chapter.quests.items.map((quest) => (
             <QuestRow
               key={quest.node.id}

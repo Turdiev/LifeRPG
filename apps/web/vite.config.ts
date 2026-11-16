@@ -6,7 +6,7 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // Пергамент светлой темы (globals.css, --background): фон заставки и цвет системной панели.
-const PARCHMENT = '#f2ecdf';
+const PARCHMENT = '#ede6d6';
 
 export default defineConfig({
   plugins: [

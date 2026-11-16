@@ -85,6 +85,7 @@ function compare(a: string, b: string): number {
 
 export async function createLine(db: Db, userId: string, body: CreateLineRequest): Promise<MutationResponse> {
   const id = crypto.randomUUID();
+  const now = new Date().toISOString();
   const line: QuestRecord = {
     id,
     lineId: id,
@@ -96,7 +97,8 @@ export async function createLine(db: Db, userId: string, body: CreateLineRequest
     description: body.description ?? null,
     deadline: body.deadline ?? null,
     completedAt: null,
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
   await insertQuest(db, userId, line);
   return { changed: [toQuest(line)], activeQuestId: await getActiveQuestId(db, userId) };

@@ -31,14 +31,16 @@ export function LineCard({ line, today, onEdit, onChange }: LineCardProps) {
   return (
     <article
       className={cn(
-        'relative rounded-xl border bg-card p-4 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring',
+        // Без рамки: карточку отделяет заливка (docs/ux.md, «Атмосфера»: без декоративных рамок). Фокус —
+        // контур снаружи, а не кольцо: кольцо заменило бы золото активной линии, контур идёт рядом с ним.
+        'relative rounded-xl bg-card p-4 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring has-[a:focus-visible]:outline-solid',
         // Золото — только у линии с активным квестом (docs/ux.md, «Цвета статусов»).
-        line.hasActiveQuest && 'border-quest ring-1 ring-quest',
+        line.hasActiveQuest && 'ring-2 ring-quest',
       )}
     >
       <div className="flex items-start gap-2">
         <StatusIcon status={line.status} />
-        <h2 className={cn('min-w-0 flex-1 pt-0.5 text-xl break-words', muted && 'text-muted-foreground')}>
+        <h2 className={cn('min-w-0 flex-1 pt-0.5 type-heading break-words', muted && 'text-muted-foreground')}>
           {/* Растянутая ссылка: вся карточка кликабельна, а меню остаётся отдельной кнопкой поверх. */}
           <Link
             to="/line/$lineId"

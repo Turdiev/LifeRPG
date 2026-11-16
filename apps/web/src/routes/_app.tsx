@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { CompletionProvider } from '@/features/completion/CompletionProvider';
 import { TodayPage } from '@/features/today/TodayPage';
 import { sessionQuery } from '@/shared/api/auth';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
@@ -31,19 +32,23 @@ function AppLayout() {
   const isDesktop = useIsDesktop();
 
   return (
-    <>
+    // Экран завершения — над обеими колонками: главу можно закрыть и с «Сегодня», и с экрана линии.
+    <CompletionProvider>
       <div className="lg:flex">
         {isDesktop && (
           <aside
             aria-label={ru.tabs.today}
             // На 1024–1279 px уже: с открытой панелью деталей колонке линии остаётся 384 px — как телефон.
-            className="sticky top-0 h-dvh w-80 shrink-0 overflow-y-auto border-r px-4 pt-6 pb-8 xl:w-88"
+            className="sticky top-0 h-dvh w-80 shrink-0 overflow-y-auto border-r px-4 pt-6 pb-8 xl:w-96"
           >
             <TodayPage />
           </aside>
         )}
-        {/* Открытая панель деталей линии (fixed справа) забирает у колонки 20rem. */}
-        <main className="mx-auto w-full max-w-160 min-w-0 px-4 pt-6 pb-28 lg:pb-10 lg:has-[[data-details-panel]]:mr-80">
+        {/* На компьютере колонка прижата к «Сегодня», а не центрирована: читается слева направо, от дела к
+            плану, а свободное место — справа, под панель деталей. Ширина контента до 720 px (max-w — вместе
+            с полями). Открытая панель (fixed справа) резервирует 20rem отступом: где места хватает
+            (от ~1500 px), колонка не двигается, где нет — сжимается. */}
+        <main className="mx-auto w-full max-w-160 min-w-0 px-4 pt-6 pb-28 lg:mx-0 lg:max-w-188 lg:pb-10 lg:has-[[data-details-panel]]:mr-80 xl:max-w-200 xl:px-10">
           <Outlet />
         </main>
       </div>
@@ -57,6 +62,6 @@ function AppLayout() {
         containerAriaLabel={ru.toasts.region}
         toastOptions={{ classNames: { actionButton: '!h-11 !px-3 !text-sm' } }}
       />
-    </>
+    </CompletionProvider>
   );
 }

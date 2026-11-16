@@ -16,12 +16,15 @@ export function PickQuest({ suggestions, takingId, onTake }: PickQuestProps) {
   return (
     <section aria-labelledby="pick-quest" className="space-y-3">
       <div className="space-y-1">
-        <h2 id="pick-quest" className="text-xl">
+        <h2 id="pick-quest" className="type-heading">
           {ru.today.pick.title}
         </h2>
         <p className="text-muted-foreground">{ru.today.pick.text}</p>
       </div>
-      <ul className="space-y-2">
+      {/* Одна карточка со строками, а не три карточки (docs/ux.md: «Карточка „Выбери квест“ с тремя предложениями»).
+          Выбор — золотое кольцо по краю строки, фокус — контур чуть глубже: оба внутри строки (снаружи их
+          обрезал бы overflow-hidden) и не перекрывают друг друга, когда квест взят с клавиатуры. */}
+      <ul className="divide-y overflow-hidden rounded-xl bg-card">
         {suggestions.map((suggestion) => {
           const taking = suggestion.id === takingId;
           return (
@@ -35,8 +38,8 @@ export function PickQuest({ suggestions, takingId, onTake }: PickQuestProps) {
                 aria-label={ru.today.pick.take(suggestion.title, suggestion.lineTitle)}
                 onClick={() => takingId === null && onTake(suggestion)}
                 className={cn(
-                  'flex min-h-14 w-full items-center gap-3 rounded-lg border bg-card px-3 py-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring not-aria-disabled:hover:border-quest/60 aria-disabled:cursor-default',
-                  taking && 'border-quest ring-1 ring-quest',
+                  'flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left outline-none transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid not-aria-disabled:hover:bg-muted/50 aria-disabled:cursor-default [li:first-child>&]:rounded-t-xl [li:last-child>&]:rounded-b-xl',
+                  taking && 'ring-2 ring-quest ring-inset',
                   takingId !== null && !taking && 'opacity-60',
                 )}
               >

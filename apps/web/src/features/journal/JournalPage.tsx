@@ -30,7 +30,7 @@ export function JournalPage({ status }: { status: QuestStatus }) {
     <div className="space-y-5">
       {/* Настройки — иконка в шапке журнала, отдельной вкладки нет (docs/ux.md, «Карта экранов»). */}
       <header className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl">{ru.journal.title}</h1>
+        <h1 className="type-display">{ru.journal.title}</h1>
         <Button asChild variant="ghost" size="icon" className="-mr-2">
           <Link to="/settings" aria-label={ru.settings.open}>
             <Settings aria-hidden />
@@ -51,10 +51,14 @@ export function JournalPage({ status }: { status: QuestStatus }) {
           <ToggleGroupItem
             key={value}
             value={value}
-            className="shrink-0 gap-1.5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            // В тёмной теме сине-серая заливка почти сливается с фоном: выбранный фильтр отличает ещё и
+            // светлая рамка (3:1 к фону, WCAG 1.4.11). Счётчик на заливке — без прозрачности, иначе ниже 4,5:1.
+            className="shrink-0 gap-1.5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground dark:data-[state=on]:border-ring"
           >
             {ru.journal.filters[value]}
-            {lines.data && <span className="tabular-nums opacity-70">{lines.data.counts[value]}</span>}
+            {lines.data && (
+              <span className="tabular-nums opacity-70 in-data-[state=on]:opacity-100">{lines.data.counts[value]}</span>
+            )}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
@@ -70,7 +74,7 @@ export function JournalPage({ status }: { status: QuestStatus }) {
         </div>
       ) : isEmptyJournal(lines.data) ? (
         <div className="space-y-3 py-10">
-          <h2 className="text-xl">{ru.journal.emptyFirst.title}</h2>
+          <h2 className="type-heading">{ru.journal.emptyFirst.title}</h2>
           <p className="max-w-[46ch] text-muted-foreground">{ru.journal.emptyFirst.text}</p>
           <Button onClick={() => setForm({ open: true })}>{ru.journal.emptyFirst.action}</Button>
         </div>
@@ -95,7 +99,7 @@ export function JournalPage({ status }: { status: QuestStatus }) {
 
       {/* На компьютере окно шире колонки журнала: кнопка прижата к низу колонки, а не центра окна. */}
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 lg:sticky lg:bottom-6">
-        <div className="mx-auto flex max-w-[640px] justify-end px-4 lg:px-0">
+        <div className="mx-auto flex max-w-[640px] justify-end px-4 lg:max-w-none lg:px-0">
           <Button className="pointer-events-auto rounded-full px-5 shadow-md" onClick={() => setForm({ open: true })}>
             <Plus data-icon="inline-start" aria-hidden />
             {ru.journal.newLine}

@@ -40,7 +40,7 @@ export function PastePreviewDialog({ kind, parsed, returnFocus, onCancel, onCrea
         className="max-h-[85dvh] grid-rows-[auto_minmax(0,1fr)_auto]"
       >
         <DialogHeader>
-          <DialogTitle className="font-heading text-xl">{pasteSummary(count)}</DialogTitle>
+          <DialogTitle>{pasteSummary(count)}</DialogTitle>
           <DialogDescription id="paste-description">{ru.paste.description}</DialogDescription>
         </DialogHeader>
 

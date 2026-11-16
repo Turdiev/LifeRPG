@@ -57,6 +57,21 @@
   }
 }
 
+/*
+ * Роли заголовков, шкала 1,25: 16 → 20 → 25 → 31 px (docs/ux.md, «Основа»). Роль назначается явно,
+ * а не по тегу: уровень h1–h3 задаёт структуру для скринридера, а не размер. Philosopher — только
+ * от 25 px: мельче его каллиграфические засечки превращаются в шум.
+ */
+@utility type-display {
+  @apply font-heading text-[1.9375rem] leading-[1.15] font-bold;
+}
+@utility type-title {
+  @apply font-heading text-[1.5625rem] leading-[1.2] font-bold;
+}
+@utility type-heading {
+  @apply font-sans text-xl leading-[1.3] font-semibold;
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -72,27 +87,31 @@
  * у галочки и прогресса; просрочка — охра, не красный.
  */
 :root {
-  --background: #f2ecdf;
+  /* Фон темнее карточки на 1,16:1: карточки читаются заливкой, без рамки (docs/ux.md, «Атмосфера»). */
+  --background: #ede6d6;
   --foreground: #2a2620;
-  --card: #f8f4ec;
+  --card: #faf7f1;
   --card-foreground: #2a2620;
-  --popover: #f8f4ec;
+  --popover: #faf7f1;
   --popover-foreground: #2a2620;
   --primary: #2a2620;
   --primary-foreground: #f8f4ec;
-  --secondary: #e6dfcf;
+  --secondary: #e2dac8;
   --secondary-foreground: #2a2620;
-  --muted: #e6dfcf;
+  --muted: #e2dac8;
   --muted-foreground: #6e665a;
-  --accent: #e6dfcf;
+  --accent: #e2dac8;
   --accent-foreground: #2a2620;
   --destructive: #9c3d2e;
   --border: #d9d0bd;
   --input: #cfc5b0;
   --ring: #8a7f6c;
-  --quest: #b8862b;
+  /* Не светлее: рамка и меч активного квеста — графика, им нужно 3:1 к карточке (WCAG 1.4.11). */
+  --quest: #9a6f1c;
   --quest-foreground: #7a5810;
   --success: #4f7a4a;
+  /* Темнее --muted: пустая шкала на 0 % иначе сливается с карточкой и фоном; зелень к ней держит 3:1. */
+  --track: #d6ccb6;
   --overdue: #9a5212;
   --radius: 0.5rem;
 }
@@ -101,17 +120,19 @@
   :root {
     --background: #1b2230;
     --foreground: #e6e1d6;
-    --card: #232c3d;
+    --card: #273145;
     --card-foreground: #e6e1d6;
-    --popover: #232c3d;
+    --popover: #273145;
     --popover-foreground: #e6e1d6;
-    --primary: #e6e1d6;
-    --primary-foreground: #1b2230;
-    --secondary: #2d3749;
+    /* Сине-серая, а не кремовая: иначе главная кнопка ярче золота активного квеста. */
+    --primary: #41506b;
+    --primary-foreground: #e6e1d6;
+    --secondary: #323d52;
     --secondary-foreground: #e6e1d6;
-    --muted: #2d3749;
-    --muted-foreground: #a39c8e;
-    --accent: #2d3749;
+    --muted: #323d52;
+    /* Светлее прежнего #a39c8e: на --muted подписи должны держать 4,5:1, а --muted посветлел вслед за карточкой. */
+    --muted-foreground: #b0a99a;
+    --accent: #323d52;
     --accent-foreground: #e6e1d6;
     --destructive: #e07a62;
     --border: #344055;
@@ -120,12 +141,15 @@
     --quest: #d9a84a;
     --quest-foreground: #e9c37a;
     --success: #7fb07a;
+    /* Светлее --border: шкала цели и полоски «Сегодня» лежат прямо на фоне, а не на карточке. */
+    --track: #3d4a61;
     --overdue: #e08a3c;
   }
 }
 
 @theme inline {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Golos — свой файл, а не системный стек: на Windows, iOS и Android текст должен выглядеть одинаково. */
+  --font-sans: "Golos Text Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Philosopher", Georgia, serif;
 
   --color-background: var(--background);
@@ -149,6 +173,7 @@
   --color-quest: var(--quest);
   --color-quest-foreground: var(--quest-foreground);
   --color-success: var(--success);
+  --color-track: var(--track);
   --color-overdue: var(--overdue);
 
   /* Блик по карточке пройденного квеста — одно короткое мерцание (docs/ux.md, «Атмосфера»). */
@@ -159,6 +184,30 @@
     }
     to {
       transform: translateX(100%);
+    }
+  }
+
+  /* Свиток экрана завершения разворачивается от середины: растёт строка грида, валики расходятся сами.
+     Плавно в начале и в конце — как разматывают бумагу; текст проявляется, когда свиток уже раскрыт.
+     Тайминги связаны с FILL_DELAY_MS в CompletionOverlay. */
+  --animate-scroll-unroll: scroll-unroll 800ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  --animate-scroll-text: scroll-text 400ms ease-out 800ms both;
+  @keyframes scroll-text {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes scroll-unroll {
+    from {
+      grid-template-rows: 0fr;
+    }
+    to {
+      grid-template-rows: 1fr;
     }
   }
 
@@ -177,12 +226,12 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    line-height: 1.4;
+    line-height: 1.5;
   }
-  h1,
-  h2,
-  h3 {
-    @apply font-heading;
-    line-height: 1.2;
+  /* Tailwind v4 вернул кнопкам системный курсор; в вебе «рука» — привычный знак, что элемент нажимается
+     (руководство по переходу на v4, «Buttons use the default cursor»). */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }

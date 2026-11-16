@@ -163,12 +163,12 @@ let pendingSeq = 0;
 
 /** Новый узел встаёт последним среди «братьев», пока сервер не выдаст настоящий ключ порядка. */
 export function insertLocally(data: LineTreeResponse, draft: Draft, now: string): LineTreeResponse {
-  const node = pendingNode(draft);
+  const node = pendingNode(draft, now);
   const changes = applyAddChild(buildTree(data.nodes), node, now);
   return { ...data, nodes: applyChanges([...data.nodes, node], changes) };
 }
 
-function pendingNode(draft: Draft): TreeNode {
+function pendingNode(draft: Draft, now: string): TreeNode {
   return {
     ...draft,
     status: 'open',
@@ -178,6 +178,7 @@ function pendingNode(draft: Draft): TreeNode {
     description: null,
     deadline: null,
     completedAt: null,
+    createdAt: now,
     progress: { done: 0, total: 0 },
   };
 }
@@ -210,7 +211,7 @@ export function insertDraftsLocally(
     const kind = kindAtDepth(top, depth);
     if (!kind) return;
     for (const draft of list) {
-      added.push(pendingNode({ id: draft.id, parentId: parent, kind, title: draft.title }));
+      added.push(pendingNode({ id: draft.id, parentId: parent, kind, title: draft.title }, now));
       place(draft.children, draft.id, depth + 1);
     }
   };
