@@ -42,8 +42,11 @@ function AppLayout() {
             <TodayPage />
           </aside>
         )}
-        {/* Открытая панель деталей линии (fixed справа) забирает у колонки 20rem. */}
-        <main className="mx-auto w-full max-w-160 min-w-0 px-4 pt-6 pb-28 lg:pb-10 lg:has-[[data-details-panel]]:mr-80">
+        {/* На компьютере колонка прижата к «Сегодня», а не центрирована: читается слева направо, от дела к
+            плану, а свободное место — справа, под панель деталей. Ширина контента до 720 px (max-w — вместе
+            с полями). Открытая панель (fixed справа) резервирует 20rem отступом: где места хватает
+            (от ~1500 px), колонка не двигается, где нет — сжимается. */}
+        <main className="mx-auto w-full max-w-160 min-w-0 px-4 pt-6 pb-28 lg:mx-0 lg:max-w-188 lg:pb-10 lg:has-[[data-details-panel]]:mr-80 xl:max-w-200 xl:px-10">
           <Outlet />
         </main>
       </div>
