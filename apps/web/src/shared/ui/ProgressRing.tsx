@@ -7,7 +7,7 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 export function ProgressRing({ value, muted = false }: { value: number; muted?: boolean }) {
   return (
     <svg viewBox="0 0 24 24" className="size-6 -rotate-90" aria-hidden>
-      <circle cx="12" cy="12" r={RADIUS} fill="none" strokeWidth="3" className="stroke-muted" />
+      <circle cx="12" cy="12" r={RADIUS} fill="none" strokeWidth="3" className="stroke-track" />
       <circle
         cx="12"
         cy="12"

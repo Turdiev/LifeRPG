@@ -25,7 +25,7 @@ export function SegmentedProgress({ segments, lineId, value, label, muted }: Seg
       className="flex h-3 flex-1 gap-1"
     >
       {segments.length === 0 ? (
-        <span className="h-full flex-1 rounded-full bg-muted" />
+        <span className="h-full flex-1 rounded-full bg-track" />
       ) : (
         segments.map((segment) => (
           <span
@@ -33,7 +33,7 @@ export function SegmentedProgress({ segments, lineId, value, label, muted }: Seg
             title={`${segment.id === lineId ? ru.line.directQuests : segment.title}: ${segment.done} / ${segment.total}`}
             style={{ flexGrow: segment.total, flexBasis: 0 }}
             className={cn(
-              'relative h-full min-w-2 overflow-hidden rounded-full bg-muted',
+              'relative h-full min-w-2 overflow-hidden rounded-full bg-track',
               segment.active && 'ring-2 ring-quest ring-offset-2 ring-offset-background',
             )}
           >
