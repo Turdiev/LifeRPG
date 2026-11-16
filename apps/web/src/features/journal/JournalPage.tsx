@@ -51,10 +51,14 @@ export function JournalPage({ status }: { status: QuestStatus }) {
           <ToggleGroupItem
             key={value}
             value={value}
-            className="shrink-0 gap-1.5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+            // В тёмной теме сине-серая заливка почти сливается с фоном: выбранный фильтр отличает ещё и
+            // светлая рамка (3:1 к фону, WCAG 1.4.11). Счётчик на заливке — без прозрачности, иначе ниже 4,5:1.
+            className="shrink-0 gap-1.5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground dark:data-[state=on]:border-ring"
           >
             {ru.journal.filters[value]}
-            {lines.data && <span className="tabular-nums opacity-70">{lines.data.counts[value]}</span>}
+            {lines.data && (
+              <span className="tabular-nums opacity-70 in-data-[state=on]:opacity-100">{lines.data.counts[value]}</span>
+            )}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>

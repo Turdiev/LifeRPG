@@ -90,7 +90,8 @@
   --border: #d9d0bd;
   --input: #cfc5b0;
   --ring: #8a7f6c;
-  --quest: #b8862b;
+  /* Не светлее: рамка и меч активного квеста — графика, им нужно 3:1 к карточке (WCAG 1.4.11). */
+  --quest: #9a6f1c;
   --quest-foreground: #7a5810;
   --success: #4f7a4a;
   --overdue: #9a5212;
@@ -105,8 +106,9 @@
     --card-foreground: #e6e1d6;
     --popover: #232c3d;
     --popover-foreground: #e6e1d6;
-    --primary: #e6e1d6;
-    --primary-foreground: #1b2230;
+    /* Сине-серая, а не кремовая: иначе главная кнопка ярче золота активного квеста. */
+    --primary: #41506b;
+    --primary-foreground: #e6e1d6;
     --secondary: #2d3749;
     --secondary-foreground: #e6e1d6;
     --muted: #2d3749;
