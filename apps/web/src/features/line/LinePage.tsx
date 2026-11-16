@@ -172,19 +172,21 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
 
         {isEmpty && !lineLocked && <p className="text-muted-foreground">{ru.line.empty}</p>}
 
-        <div className="space-y-3">
+        {/* Одним списком с разделителями, без карточек: главы и задания без главы — уровни дерева, а не
+            отдельные блоки; карточка остаётся у активного квеста (docs/ux.md, «Решения по UX»). */}
+        <div className="divide-y">
           {view.chapters.items.map(chapterSection)}
-          <DoneGroup count={view.chapters.done.length}>
-            <div className="space-y-3">{view.chapters.done.map(chapterSection)}</div>
+          {/* Без отступа слева: шеврон «Выполнено» — на одной линии с шевронами глав. */}
+          <DoneGroup count={view.chapters.done.length} className="px-0">
+            <div className="divide-y border-t">{view.chapters.done.map(chapterSection)}</div>
           </DoneGroup>
+          {view.quests.items.length + view.quests.done.length > 0 && (
+            <div className="-ml-1 py-1">
+              {view.quests.items.map(questRow)}
+              <DoneGroup count={view.quests.done.length}>{view.quests.done.map(questRow)}</DoneGroup>
+            </div>
+          )}
         </div>
-
-        {view.quests.items.length + view.quests.done.length > 0 && (
-          <div className="rounded-xl border bg-card px-1 py-1">
-            {view.quests.items.map(questRow)}
-            <DoneGroup count={view.quests.done.length}>{view.quests.done.map(questRow)}</DoneGroup>
-          </div>
-        )}
 
         {!lineLocked && (
           <div>
@@ -265,8 +267,9 @@ function LineSkeleton() {
     <div className="space-y-4" aria-hidden>
       <Skeleton className="h-8 w-2/3" />
       <Skeleton className="h-2.5" />
-      <Skeleton className="h-24 rounded-xl" />
-      <Skeleton className="h-24 rounded-xl" />
+      <Skeleton className="h-14" />
+      <Skeleton className="h-14" />
+      <Skeleton className="h-14" />
     </div>
   );
 }

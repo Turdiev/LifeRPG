@@ -61,8 +61,9 @@ export function QuestCard({ view, finished, focusTitle, onToggle }: QuestCardPro
         />
       )}
       <p className="text-sm text-muted-foreground">{chapter ? ru.today.path(line.title, chapter.title) : line.title}</p>
-      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 type-display break-words outline-none">
-        <Swords className={cn('mt-2 size-5 shrink-0', finished ? 'text-muted-foreground' : 'text-quest')} aria-hidden />
+      {/* На компьютере «Сегодня» — узкая боковая колонка: там 31 px давит на соседний экран, хватает 25. */}
+      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 type-display break-words outline-none lg:type-title">
+        <Swords className={cn('mt-2 size-5 shrink-0 lg:mt-1.25', finished ? 'text-muted-foreground' : 'text-quest')} aria-hidden />
         {!finished && <span className="sr-only">{ru.today.activeQuest}: </span>}
         <span className="min-w-0 flex-1">{quest.title}</span>
       </h2>

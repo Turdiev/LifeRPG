@@ -19,7 +19,7 @@ export function NextQuestCard({ next, taking, onTake, onChooseOther }: NextQuest
   return (
     <section
       aria-labelledby="next-quest"
-      className="rounded-xl border bg-card p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:animation-duration-300"
+      className="rounded-xl bg-card p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:animation-duration-300"
     >
       <h2 id="next-quest" className="type-heading break-words">
         {ru.today.next.title(next.quest.title)}

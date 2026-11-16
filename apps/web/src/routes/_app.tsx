@@ -37,7 +37,7 @@ function AppLayout() {
           <aside
             aria-label={ru.tabs.today}
             // На 1024–1279 px уже: с открытой панелью деталей колонке линии остаётся 384 px — как телефон.
-            className="sticky top-0 h-dvh w-80 shrink-0 overflow-y-auto border-r px-4 pt-6 pb-8 xl:w-88"
+            className="sticky top-0 h-dvh w-80 shrink-0 overflow-y-auto border-r px-4 pt-6 pb-8 xl:w-96"
           >
             <TodayPage />
           </aside>
