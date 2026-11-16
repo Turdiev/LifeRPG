@@ -8,13 +8,15 @@ type SegmentedProgressProps = {
   value: number;
   label: string;
   muted: boolean;
+  /** Для шкалы не на фоне страницы: например, `*:ring-offset-card`, чтобы отступ золотого кольца совпал с подложкой. */
+  className?: string;
 };
 
 /**
  * Шкала цели, разбитая на главы: ширина отрезка — доля главы в листьях цели. Видно не только
  * «сколько сделано», но и где ты в сюжете; золотом обведена глава активного квеста.
  */
-export function SegmentedProgress({ segments, lineId, value, label, muted }: SegmentedProgressProps) {
+export function SegmentedProgress({ segments, lineId, value, label, muted, className }: SegmentedProgressProps) {
   return (
     <div
       role="progressbar"
@@ -22,7 +24,7 @@ export function SegmentedProgress({ segments, lineId, value, label, muted }: Seg
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={value}
-      className="flex h-3 flex-1 gap-1"
+      className={cn('flex h-3 flex-1 gap-1', className)}
     >
       {segments.length === 0 ? (
         <span className="h-full flex-1 rounded-full bg-track" />
