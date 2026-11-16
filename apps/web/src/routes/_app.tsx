@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router';
+import { CompletionProvider } from '@/features/completion/CompletionProvider';
 import { TodayPage } from '@/features/today/TodayPage';
 import { sessionQuery } from '@/shared/api/auth';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
@@ -31,7 +32,8 @@ function AppLayout() {
   const isDesktop = useIsDesktop();
 
   return (
-    <>
+    // Экран завершения — над обеими колонками: главу можно закрыть и с «Сегодня», и с экрана линии.
+    <CompletionProvider>
       <div className="lg:flex">
         {isDesktop && (
           <aside
@@ -60,6 +62,6 @@ function AppLayout() {
         containerAriaLabel={ru.toasts.region}
         toastOptions={{ classNames: { actionButton: '!h-11 !px-3 !text-sm' } }}
       />
-    </>
+    </CompletionProvider>
   );
 }

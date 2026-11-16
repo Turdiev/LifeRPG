@@ -17,6 +17,8 @@ export const questSchema = z.object({
   description: z.string().nullable(),
   deadline: deadline.nullable(),
   completedAt: z.iso.datetime().nullable(),
+  /** Для экрана завершения: «за N дней» от создания до закрытия главы или цели (F-16). */
+  createdAt: z.iso.datetime(),
 });
 export type Quest = z.infer<typeof questSchema>;
 

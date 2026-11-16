@@ -18,6 +18,7 @@ function toRecord(row: typeof quests.$inferSelect): QuestRecord {
     description: row.description,
     deadline: row.deadline,
     completedAt: row.completedAt?.toISOString() ?? null,
+    createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -33,6 +34,7 @@ export function toQuest(record: QuestRecord): Quest {
     description: record.description,
     deadline: record.deadline,
     completedAt: record.completedAt,
+    createdAt: record.createdAt,
   };
 }
 
@@ -118,6 +120,8 @@ export async function insertQuests(ex: Executor, userId: string, records: readon
       title: record.title,
       description: record.description,
       deadline: record.deadline,
+      // Явно, а не DEFAULT now(): ответ на создание отдаёт createdAt из записи — с базой он должен совпасть.
+      createdAt: new Date(record.createdAt),
     })),
   );
 }

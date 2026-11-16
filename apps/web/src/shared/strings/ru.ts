@@ -147,6 +147,16 @@ export const ru = {
     confirm: 'Удалить',
     cancel: 'Отмена',
   },
+  // Экран завершения (F-16): голос рассказчика в заголовке, итоги — обычным языком.
+  completion: {
+    chapter: 'Глава пройдена',
+    line: 'Цель достигнута',
+    days: (count: number, noun: string) => `За ${count} ${noun}`,
+    daysNoun: { one: 'день', few: 'дня', many: 'дней' },
+    quests: (count: number, noun: string) => `Выполнено ${count} ${noun}`,
+    questsNoun: { one: 'задание', few: 'задания', many: 'заданий' },
+    next: 'Дальше',
+  },
   toasts: {
     region: 'Уведомления',
     paused: 'Цель на паузе',

@@ -27,6 +27,7 @@ function tree(rows: [string, string | null, Quest['kind'], Quest['status']?][], 
     description: null,
     deadline: null,
     completedAt: status === 'done' ? '2026-11-01T00:00:00.000Z' : null,
+    createdAt: '2026-10-01T00:00:00.000Z',
     progress: { done: 0, total: 0 },
   }));
   return { nodes, activeQuestId } satisfies LineTreeResponse;
@@ -224,6 +225,7 @@ describe('mergeResponse', () => {
       description: null,
       deadline: null,
       completedAt: null,
+      createdAt: '2026-10-01T00:00:00.000Z',
     };
     const response: MutationResponse = { changed: [created], activeQuestId: 'Q' };
 

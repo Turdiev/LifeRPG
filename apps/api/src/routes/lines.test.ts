@@ -163,6 +163,17 @@ describe('GET /api/v1/lines/:id/tree', () => {
     expect(tree.activeQuestId).toBeNull();
   });
 
+  it('returns createdAt of every node, the same as in the creation response', async () => {
+    const t = await createTestApp();
+    const line = await t.createLine();
+    const quest = await t.createQuest(line.id, 'quest');
+
+    const tree = await t.tree(line.id);
+
+    expect(tree.nodes.find((n) => n.id === line.id)?.createdAt).toBe(line.createdAt);
+    expect(tree.nodes.find((n) => n.id === quest.id)?.createdAt).toBe(quest.createdAt);
+  });
+
   it('answers 404 for an unknown id and for a node that is not a line', async () => {
     const t = await createTestApp();
     const line = await t.createLine();

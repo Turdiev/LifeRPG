@@ -187,6 +187,30 @@
     }
   }
 
+  /* Свиток экрана завершения разворачивается от середины: растёт строка грида, валики расходятся сами.
+     Плавно в начале и в конце — как разматывают бумагу; текст проявляется, когда свиток уже раскрыт.
+     Тайминги связаны с FILL_DELAY_MS в CompletionOverlay. */
+  --animate-scroll-unroll: scroll-unroll 800ms cubic-bezier(0.65, 0, 0.35, 1) both;
+  --animate-scroll-text: scroll-text 400ms ease-out 800ms both;
+  @keyframes scroll-text {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes scroll-unroll {
+    from {
+      grid-template-rows: 0fr;
+    }
+    to {
+      grid-template-rows: 1fr;
+    }
+  }
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
