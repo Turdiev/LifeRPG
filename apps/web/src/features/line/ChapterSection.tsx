@@ -1,7 +1,7 @@
-import { ChevronRight, Flag, Pause } from 'lucide-react';
 import { percent } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
+import { ChapterIcon, ChevronRightIcon, PauseIcon } from '@/shared/ui/icons';
 import { Progress } from '@/shared/ui/progress';
 import { DoneGroup } from './DoneGroup';
 import { InlineAdd } from './InlineAdd';
@@ -22,36 +22,39 @@ type ChapterSectionProps = {
 export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onToggleQuest }: ChapterSectionProps) {
   const { node, progress } = chapter;
   const muted = chapter.locked || node.status === 'done';
-  const Icon = node.status === 'paused' ? Pause : Flag;
+  const Icon = node.status === 'paused' ? PauseIcon : ChapterIcon;
+  // Своя отмена — серым; заморозка от предка или своя пауза — холодной штриховкой (docs/ux.md).
+  const tone = node.status === 'cancelled' ? 'cancelled' : chapter.locked ? 'paused' : 'active';
   const contentId = `chapter-${node.id}`;
 
   return (
-    // Секция без рамки (docs/ux.md: «раскрываемая секция»): главы отделяет разделитель списка в LinePage.
-    <section className="py-1">
+    // Секция-панель (docs/ux.md: «раскрываемая секция»): заголовок, тонкая шкала, задания строками.
+    <section className="panel px-3.5 pb-1.5">
       <div className="-mr-2 flex items-center gap-1">
-        {/* Не type-heading: глава — пункт списка под заголовком цели, в 20 px она спорила бы с ним. */}
-        <h2 className="min-w-0 flex-1 text-base font-semibold">
+        {/* Глава — пункт под шапкой цели: 19 px, мельче названия цели. */}
+        <h2 className="min-w-0 flex-1 type-chapter">
           <button
             type="button"
             onClick={onToggle}
             aria-expanded={open}
             aria-controls={contentId}
-            className="flex min-h-12 w-full items-center gap-2 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex min-h-14 w-full items-center gap-2.5 text-left outline-none focus-visible:outline-2 focus-visible:outline-ring"
           >
-            <ChevronRight className={cn('size-4 shrink-0 transition-transform', open && 'rotate-90')} aria-hidden />
-            <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <Icon className={tone === 'active' ? 'text-gold' : tone === 'paused' ? 'text-paused' : 'text-muted-foreground'} />
             <span
               className={cn(
                 'min-w-0 flex-1 break-words',
                 muted && 'text-muted-foreground',
+                node.status === 'done' && 'line-through decoration-gold-dim',
                 node.status === 'cancelled' && 'line-through',
               )}
             >
               {node.title}
             </span>
-            <span className="shrink-0 text-sm font-normal tabular-nums text-muted-foreground">
+            <span className="shrink-0 font-sans text-[0.8125rem] tracking-normal tabular-nums text-muted-foreground">
               {ru.line.questCount(chapter.questCount.done, chapter.questCount.total)}
             </span>
+            <ChevronRightIcon className={cn('size-4 text-muted-foreground transition-transform', open && 'rotate-90')} />
           </button>
         </h2>
         <NodeMenu node={node} locked={chapter.branchLocked} />
@@ -59,12 +62,12 @@ export function ChapterSection({ chapter, open, onToggle, isQuestExpanded, onTog
       <Progress
         value={percent(progress)}
         aria-label={ru.line.progressLabel(node.title)}
-        className="mb-3"
-        indicatorClassName={chapter.locked ? 'bg-muted-foreground/50' : undefined}
+        className="mb-1 h-0.75 border-0"
+        tone={tone}
       />
 
       {open && (
-        <div id={contentId} className="pb-2 pl-2">
+        <div id={contentId}>
           {chapter.quests.items.map((quest) => (
             <QuestRow
               key={quest.node.id}

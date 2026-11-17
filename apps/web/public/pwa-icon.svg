@@ -1,9 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Источник иконок PWA (pnpm icons): свиток сюжетной линии на пергаменте, цвета светлой темы.
-       Фон во всю площадь, рисунок в центральных 50 %: так иконка остаётся целой в маске любой формы. -->
-  <rect width="512" height="512" fill="#f2ecdf"/>
-  <g transform="translate(256 256) scale(12.8) translate(-12 -12)" fill="none" stroke="#2a2620" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
-    <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
+  <!-- Источник иконок PWA (pnpm icons): герб LIFE RPG с экрана входа, золото на обсидиане тёмной темы.
+       Фон во всю площадь, герб — в круге радиусом 160 из 205 безопасной зоны маски: иконка цела в любой форме. -->
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#dcae52" stop-opacity=".22"/>
+      <stop offset=".7" stop-color="#dcae52" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#0d0b09"/>
+  <rect width="512" height="512" fill="url(#halo)"/>
+  <g transform="translate(256 256) scale(5.5) translate(-32 -32)" fill="none" stroke="#dcae52" stroke-width="1.4">
+    <circle cx="32" cy="32" r="29"/>
+    <circle cx="32" cy="32" r="24" stroke-dasharray="1.5 3.5"/>
+    <path d="M32 7l5.5 19.5L57 32l-19.5 5.5L32 57l-5.5-19.5L7 32l19.5-5.5z" fill="#15110d" stroke="#f4d78c"/>
+    <circle cx="32" cy="32" r="3.5" fill="#f4d78c" stroke="none"/>
   </g>
 </svg>

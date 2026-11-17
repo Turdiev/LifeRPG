@@ -97,7 +97,7 @@ function LineForm({ line, onDone }: { line?: LineSummary; onDone: () => void }) 
           maxLength={120}
           required
           autoFocus
-          className="h-11"
+          className="font-heading text-xl tracking-[0.02em]"
         />
       </div>
       <div className="grid gap-2">
@@ -116,11 +116,11 @@ function LineForm({ line, onDone }: { line?: LineSummary; onDone: () => void }) 
           type="date"
           value={deadline}
           onChange={(event) => setDeadline(event.target.value)}
-          className="h-11 w-fit"
+          className="w-fit"
         />
       </div>
       <SheetFooter className="px-0">
-        <Button type="submit" disabled={!canSubmit}>
+        <Button type="submit" size="lg" disabled={!canSubmit}>
           {line ? ru.lineForm.save : ru.lineForm.create}
         </Button>
       </SheetFooter>

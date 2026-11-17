@@ -1,7 +1,7 @@
 import { countDrafts, kindAtDepth, type DraftKind, type ParsedList, type QuestDraft } from '@life-rpg/domain';
 import { BATCH_MAX } from '@life-rpg/shared';
-import { Flag, ListChecks, Swords } from 'lucide-react';
 import { ru } from '@/shared/strings/ru';
+import { ChapterIcon, QuestIcon, StepIcon } from '@/shared/ui/icons';
 import { Button } from '@/shared/ui/button';
 import {
   Dialog,
@@ -21,7 +21,7 @@ type PastePreviewDialogProps = {
   onCreate: () => void;
 };
 
-const icons = { chapter: Flag, quest: Swords, step: ListChecks } as const;
+const icons = { chapter: ChapterIcon, quest: QuestIcon, step: StepIcon } as const;
 
 /** Предпросмотр «Будет создано: …» перед созданием (docs/ux.md); в v2 его же заполнит ИИ. */
 export function PastePreviewDialog({ kind, parsed, returnFocus, onCancel, onCreate }: PastePreviewDialogProps) {
@@ -74,11 +74,11 @@ function DraftTree({ drafts, top, depth, label }: { drafts: QuestDraft[]; top: D
   const Icon = icons[kind];
 
   return (
-    <ul aria-label={label} className={depth > 0 ? 'ml-3 border-l pl-3' : undefined}>
+    <ul aria-label={label} className={depth > 0 ? 'ml-2 border-l border-dashed border-border-strong pl-3' : undefined}>
       {drafts.map((draft, index) => (
         <li key={index}>
           <span className="flex items-start gap-2 py-1">
-            <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <Icon className="mt-0.5 size-4 text-gold" />
             <span className="min-w-0 break-words">{draft.title}</span>
           </span>
           <DraftTree drafts={draft.children} top={top} depth={depth + 1} />

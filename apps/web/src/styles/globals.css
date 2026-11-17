@@ -58,18 +58,30 @@
 }
 
 /*
- * Роли заголовков, шкала 1,25: 16 → 20 → 25 → 31 px (docs/ux.md, «Основа»). Роль назначается явно,
- * а не по тегу: уровень h1–h3 задаёт структуру для скринридера, а не размер. Philosopher — только
- * от 25 px: мельче его каллиграфические засечки превращаются в шум.
+ * Тема — атрибут `data-theme` на <html>, а не медиазапрос: её можно выбрать в настройках.
+ * «Как в системе» превращается в light/dark в shared/lib/theme.ts до первой отрисовки React.
  */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Роли заголовков. Forum — гравировка по камню, у него одно начертание (400), поэтому иерархию
+ * держат размер и разрядка. Заглавные с широкой разрядкой — только у названий экранов и баннеров
+ * (type-banner); названия целей, глав и заданий — обычным регистром, их читают быстро.
+ */
+@utility type-banner {
+  @apply font-heading text-[1.3125rem] leading-[1.2] tracking-[0.26em] uppercase text-gold-text;
+}
 @utility type-display {
-  @apply font-heading text-[1.9375rem] leading-[1.15] font-bold;
+  @apply font-heading text-[1.6875rem] leading-[1.2] tracking-[0.03em];
 }
 @utility type-title {
-  @apply font-heading text-[1.5625rem] leading-[1.2] font-bold;
+  @apply font-heading text-2xl leading-[1.2] tracking-[0.02em];
 }
 @utility type-heading {
-  @apply font-sans text-xl leading-[1.3] font-semibold;
+  @apply font-heading text-xl leading-[1.25] tracking-[0.02em];
+}
+@utility type-chapter {
+  @apply font-heading text-[1.1875rem] leading-[1.2] tracking-[0.05em];
 }
 
 @utility no-scrollbar {
@@ -82,78 +94,188 @@
 }
 
 /*
- * docs/ux.md, «Визуальная основа»: пергамент в светлой теме, сине-серая ночь в тёмной.
- * Золото (--quest) — единственный яркий цвет, только у активного квеста; зелень — только
- * у галочки и прогресса; просрочка — охра, не красный.
+ * Поверхность второго уровня: тон чуть светлее фона и тонкая линия, без рамок в рамках
+ * (docs/ux.md, «Атмосфера»). Без position: панелью бывают и fixed-диалоги; для уголков `ornate`
+ * карточке нужен свой `relative`.
  */
-:root {
-  /* Фон темнее карточки на 1,16:1: карточки читаются заливкой, без рамки (docs/ux.md, «Атмосфера»). */
-  --background: #ede6d6;
-  --foreground: #2a2620;
-  --card: #faf7f1;
-  --card-foreground: #2a2620;
-  --popover: #faf7f1;
-  --popover-foreground: #2a2620;
-  --primary: #2a2620;
-  --primary-foreground: #f8f4ec;
-  --secondary: #e2dac8;
-  --secondary-foreground: #2a2620;
-  --muted: #e2dac8;
-  --muted-foreground: #6e665a;
-  --accent: #e2dac8;
-  --accent-foreground: #2a2620;
-  --destructive: #9c3d2e;
-  --border: #d9d0bd;
-  --input: #cfc5b0;
-  --ring: #8a7f6c;
-  /* Не светлее: рамка и меч активного квеста — графика, им нужно 3:1 к карточке (WCAG 1.4.11). */
-  --quest: #9a6f1c;
-  --quest-foreground: #7a5810;
-  --success: #4f7a4a;
-  /* Темнее --muted: пустая шкала на 0 % иначе сливается с карточкой и фоном; зелень к ней держит 3:1. */
-  --track: #d6ccb6;
-  --overdue: #9a5212;
-  --radius: 0.5rem;
+@utility panel {
+  background: linear-gradient(180deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--border);
+  border-radius: 3px;
 }
 
+/* Золотые уголки — только у одной карточки на экране: активный квест или шапка цели. */
+@utility ornate {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 1;
+    pointer-events: none;
+    --corner: linear-gradient(var(--gold), var(--gold));
+    background:
+      var(--corner) 0 0 / 16px 1px,
+      var(--corner) 0 0 / 1px 16px,
+      var(--corner) 100% 0 / 16px 1px,
+      var(--corner) 100% 0 / 1px 16px,
+      var(--corner) 0 100% / 16px 1px,
+      var(--corner) 0 100% / 1px 16px,
+      var(--corner) 100% 100% / 16px 1px,
+      var(--corner) 100% 100% / 1px 16px;
+    background-repeat: no-repeat;
+  }
+}
+
+/*
+ * Кнопка со срезанными углами. Срез — у псевдоэлементов, а не у самой кнопки: clip-path обрезал бы
+ * и контур фокуса. ::before — кромка, ::after — заливка на 1 px внутри.
+ */
+@utility chamfer {
+  position: relative;
+  isolation: isolate;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  }
+  &::before {
+    inset: 0;
+    background: var(--chamfer-edge);
+  }
+  &::after {
+    inset: 1px;
+    background: var(--chamfer-fill);
+  }
+  &:hover:not(:disabled)::after {
+    filter: brightness(1.08);
+  }
+}
+@utility chamfer-gold {
+  --chamfer-edge: var(--gold-bright);
+  --chamfer-fill: linear-gradient(180deg, var(--button-from), var(--button-to));
+  color: var(--on-gold);
+}
+@utility chamfer-ghost {
+  --chamfer-edge: var(--gold-dim);
+  --chamfer-fill: var(--surface-1);
+  color: var(--foreground);
+}
+@utility chamfer-danger {
+  --chamfer-edge: var(--danger);
+  --chamfer-fill: var(--danger);
+  color: #fff;
+}
+
+/*
+ * docs/ux.md, «Визуальная основа»: «Золото и руны». Тёмная тема — обсидиан, золото — единственный
+ * акцент: всё сделанное или важное светится, остальное — тихий камень. Светлая — «пергамент»: то же
+ * золото, прожжённое до бронзы. Выполненное — золотое, зелёного нет; просрочка — янтарь, пауза —
+ * холодная сталь, не красный.
+ */
+:root {
+  --background: #e6d9b8;
+  --foreground: #2a1c0d;
+  --surface-1: #f0e5c9;
+  --surface-2: #f6eed9;
+  --surface-3: #fbf5e6;
+  --card: #f6eed9;
+  --card-foreground: #2a1c0d;
+  --popover: #f6eed9;
+  --popover-foreground: #2a1c0d;
+  --primary: #85560f;
+  --primary-foreground: #f8f0dc;
+  --secondary: #fbf5e6;
+  --secondary-foreground: #2a1c0d;
+  --muted: #fbf5e6;
+  --muted-foreground: #65553b;
+  --accent: #fbf5e6;
+  --accent-foreground: #2a1c0d;
+  --border: #c1ad7e;
+  --border-strong: #9a7a35;
+  /* Темнее линии: границе поля нужно 3:1 к фону (WCAG 1.4.11). */
+  --input: #876a2c;
+  /* Фокус — 3:1 к фону и полю (WCAG 1.4.11); бронза макета #a8731c давала 2,9:1. */
+  --ring: #8f5e17;
+  --gold: #85560f;
+  --gold-bright: #a8731c;
+  --gold-dim: #b99655;
+  /* Текст бронзой темнее графики: #85560f на фоне — 4,49:1, ниже AA для обычного текста. */
+  --gold-text: #7d500d;
+  --on-gold: #f8f0dc;
+  /* Градиент кнопки темнее макета: светлый текст на нём держит 4,9:1 по всей высоте. */
+  --button-from: #8f5e17;
+  --button-to: #7a4e0c;
+  --track: var(--surface-3);
+  --overdue: #9a4a17;
+  --paused: #4d6385;
+  --destructive: #a0432b;
+  --danger: #a0432b;
+  --glow: rgb(150 100 20 / 0.28);
+  --halo: rgb(255 248 225 / 0.5);
+  --vignette: rgb(110 75 25 / 0.38);
+  --radius: 3px;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --background: #0d0b09;
+  --foreground: #ece1ca;
+  --surface-1: #15110d;
+  --surface-2: #1e1812;
+  --surface-3: #2a2218;
+  --card: #1e1812;
+  --card-foreground: #ece1ca;
+  --popover: #1e1812;
+  --popover-foreground: #ece1ca;
+  --primary: #dcae52;
+  --primary-foreground: #1a1209;
+  --secondary: #2a2218;
+  --secondary-foreground: #ece1ca;
+  --muted: #2a2218;
+  --muted-foreground: #a69884;
+  --accent: #2a2218;
+  --accent-foreground: #ece1ca;
+  --border: #3b2f1f;
+  --border-strong: #6b5326;
+  --input: #8f6e2e;
+  --ring: #f4d78c;
+  --gold: #dcae52;
+  --gold-bright: #f4d78c;
+  --gold-dim: #8f6e2e;
+  --gold-text: #f4d78c;
+  --on-gold: #1a1209;
+  --button-from: #f4d78c;
+  --button-to: #dcae52;
+  --overdue: #e0975c;
+  --paused: #93a7c2;
+  /* Текст «Удалить» на карточке: заливочный #b4533a держит только 3,5:1, для текста светлее. */
+  --destructive: #d4694c;
+  --danger: #b4533a;
+  --glow: rgb(220 174 82 / 0.38);
+  --halo: rgb(220 174 82 / 0.12);
+  --vignette: rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* До того как main.tsx поставит data-theme, страница пуста — важен только цвет фона. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1b2230;
-    --foreground: #e6e1d6;
-    --card: #273145;
-    --card-foreground: #e6e1d6;
-    --popover: #273145;
-    --popover-foreground: #e6e1d6;
-    /* Сине-серая, а не кремовая: иначе главная кнопка ярче золота активного квеста. */
-    --primary: #41506b;
-    --primary-foreground: #e6e1d6;
-    --secondary: #323d52;
-    --secondary-foreground: #e6e1d6;
-    --muted: #323d52;
-    /* Светлее прежнего #a39c8e: на --muted подписи должны держать 4,5:1, а --muted посветлел вслед за карточкой. */
-    --muted-foreground: #b0a99a;
-    --accent: #323d52;
-    --accent-foreground: #e6e1d6;
-    --destructive: #e07a62;
-    --border: #344055;
-    --input: #3d4a61;
-    --ring: #8b95a8;
-    --quest: #d9a84a;
-    --quest-foreground: #e9c37a;
-    --success: #7fb07a;
-    /* Светлее --border: шкала цели и полоски «Сегодня» лежат прямо на фоне, а не на карточке. */
-    --track: #3d4a61;
-    --overdue: #e08a3c;
+  :root:not([data-theme]) {
+    background: #0d0b09;
   }
 }
 
 @theme inline {
-  /* Golos — свой файл, а не системный стек: на Windows, iOS и Android текст должен выглядеть одинаково. */
-  --font-sans: "Golos Text Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-heading: "Philosopher", Georgia, serif;
+  /* Свои файлы шрифтов, а не Google Fonts: CSP разрешает всё только со своего адреса. */
+  --font-sans: "Onest Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Forum", "Cormorant Garamond", Georgia, serif;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -167,14 +289,21 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-danger: var(--danger);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-quest: var(--quest);
-  --color-quest-foreground: var(--quest-foreground);
-  --color-success: var(--success);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
+  --color-gold-dim: var(--gold-dim);
+  --color-gold-text: var(--gold-text);
+  --color-on-gold: var(--on-gold);
+  --color-glow: var(--glow);
+  --color-halo: var(--halo);
   --color-track: var(--track);
   --color-overdue: var(--overdue);
+  --color-paused: var(--paused);
 
   /* Блик по карточке пройденного квеста — одно короткое мерцание (docs/ux.md, «Атмосфера»). */
   --animate-quest-shimmer: quest-shimmer 900ms ease-out both;
@@ -187,51 +316,116 @@
     }
   }
 
-  /* Свиток экрана завершения разворачивается от середины: растёт строка грида, валики расходятся сами.
-     Плавно в начале и в конце — как разматывают бумагу; текст проявляется, когда свиток уже раскрыт.
-     Тайминги связаны с FILL_DELAY_MS в CompletionOverlay. */
-  --animate-scroll-unroll: scroll-unroll 800ms cubic-bezier(0.65, 0, 0.35, 1) both;
-  --animate-scroll-text: scroll-text 400ms ease-out 800ms both;
-  @keyframes scroll-text {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
+  /* Отметка этапа — единственный «звук» повседневности: ромб подпрыгивает, от него расходится кольцо света. */
+  --animate-check-pop: check-pop 420ms cubic-bezier(0.2, 1.5, 0.4, 1);
+  --animate-check-ring: check-ring 700ms ease-out both;
+  @keyframes check-pop {
+    0% {
+      transform: scale(0.8);
     }
+    55% {
+      transform: scale(1.22);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  @keyframes check-ring {
+    0% {
+      opacity: 0.9;
+      transform: rotate(45deg) scale(0.7);
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(45deg) scale(2.3);
+    }
+  }
+
+  /* Экран завершения: вспышка, медленные лучи, баннер с раскрывающейся разрядкой, итоги поднимаются следом.
+     Тайминги связаны с CompletionOverlay. */
+  --animate-finale-flash: finale-flash 1.3s ease-out both;
+  --animate-finale-banner: finale-banner 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-finale-rays: finale-rays 90s linear infinite;
+  --animate-finale-rise: finale-rise 0.9s ease-out 0.9s both;
+  @keyframes finale-flash {
+    0% {
+      opacity: 0;
+    }
+    12% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes finale-banner {
+    0% {
+      opacity: 0;
+      letter-spacing: 0.8em;
+    }
+    100% {
+      opacity: 1;
+      letter-spacing: 0.38em;
+    }
+  }
+  @keyframes finale-rays {
     to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes finale-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    100% {
       opacity: 1;
       transform: none;
     }
   }
-  @keyframes scroll-unroll {
-    from {
-      grid-template-rows: 0fr;
-    }
+
+  --animate-skeleton-sheen: skeleton-sheen 1.6s linear infinite;
+  @keyframes skeleton-sheen {
     to {
-      grid-template-rows: 1fr;
+      background-position: -200% 0;
     }
   }
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 16px;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  html {
-    color-scheme: light dark;
-  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
     line-height: 1.5;
+  }
+  /*
+   * Атмосфера живёт по краям и за контентом: сверху — мягкий ореол, по краям — виньетка.
+   * Текст лежит на ровной поверхности (docs/ux.md, «Атмосфера»).
+   */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 55% at 50% -5%, var(--halo), transparent 65%),
+      radial-gradient(130% 100% at 50% 45%, transparent 50%, var(--vignette));
   }
   /* Tailwind v4 вернул кнопкам системный курсор; в вебе «рука» — привычный знак, что элемент нажимается
      (руководство по переходу на v4, «Buttons use the default cursor»). */
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+  :focus-visible {
+    outline-color: var(--ring);
   }
 }

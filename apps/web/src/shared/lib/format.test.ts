@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDeadline, isOverdue, percent } from './format';
+import { daysOverdue, formatDeadline, isOverdue, percent } from './format';
 
 describe('percent', () => {
   it('rounds done ÷ total to whole percent', () => {
@@ -25,5 +25,13 @@ describe('formatDeadline', () => {
   it('shows day and month, and the year only when it is not the current one', () => {
     expect(formatDeadline('2026-05-01', '2026-11-11')).toBe('1 мая');
     expect(formatDeadline('2027-05-01', '2026-11-11')).toBe('1 мая 2027 г.');
+  });
+});
+
+describe('daysOverdue', () => {
+  it('counts calendar days since the deadline, across months and years', () => {
+    expect(daysOverdue('2026-11-01', '2026-11-17')).toBe(16);
+    expect(daysOverdue('2026-11-16', '2026-11-17')).toBe(1);
+    expect(daysOverdue('2025-12-31', '2026-01-02')).toBe(2);
   });
 });

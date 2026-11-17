@@ -1,22 +1,28 @@
 import type { LineSummary } from '@/shared/api/quests-api';
 import { Link } from '@tanstack/react-router';
-import { ChevronRight, Scroll } from 'lucide-react';
 import type { Progress as ProgressValue } from '@life-rpg/domain';
 import { percent } from '@/shared/lib/format';
 import { ru } from '@/shared/strings/ru';
+import { LineIcon } from '@/shared/ui/icons';
 import { Progress } from '@/shared/ui/progress';
 
-const rowLink =
-  'flex min-h-11 items-center gap-3 rounded-lg px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring';
+const rowLink = 'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
-/** «Полумарафон к маю · 34%» под карточкой квеста; тап открывает линию (docs/ux.md, «Сегодня»). */
+/** Цель активного квеста под карточкой: название и шкала; тап открывает линию (docs/ux.md, «Сегодня»). */
 export function GoalLink({ line, progress }: { line: { id: string; title: string }; progress: ProgressValue }) {
   const value = percent(progress);
   return (
-    <Link to="/line/$lineId" params={{ lineId: line.id }} aria-label={ru.today.openGoal(line.title, value)} className={rowLink}>
-      <Scroll className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-      <span className="min-w-0 flex-1 break-words">{ru.today.goal(line.title, value)}</span>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    <Link
+      to="/line/$lineId"
+      params={{ lineId: line.id }}
+      aria-label={ru.today.openGoal(line.title, value)}
+      className={`${rowLink} mt-2 block border-t px-1 pt-3 pb-1`}
+    >
+      <span className="block text-sm break-words">{line.title}</span>
+      <span className="mt-1 flex items-center gap-3">
+        <Progress value={value} className="flex-1" aria-hidden />
+        <Percent value={value} />
+      </span>
     </Link>
   );
 }
@@ -25,35 +31,41 @@ export function GoalLink({ line, progress }: { line: { id: string; title: string
 export function TodayLines({ title, lines }: { title: string; lines: LineSummary[] }) {
   if (lines.length === 0) return null;
   return (
-    <section aria-labelledby="today-lines" className="space-y-2">
-      <h2 id="today-lines" className="type-heading">
+    <section aria-labelledby="today-lines">
+      <h2 id="today-lines" className="mx-1 text-xs font-medium text-muted-foreground">
         {title}
       </h2>
       <ul>
         {lines.map((line) => {
           const value = percent(line.progress);
           return (
-            <li key={line.id}>
+            <li key={line.id} className="border-b last:border-b-0">
               <Link
                 to="/line/$lineId"
                 params={{ lineId: line.id }}
                 aria-label={ru.today.openGoal(line.title, value)}
-                className={`${rowLink} py-2`}
+                className={`${rowLink} flex min-h-13.5 items-center gap-3 px-1 py-2`}
               >
-                <span className="min-w-0 flex-1 space-y-1.5">
-                  <span className="flex items-baseline gap-3">
-                    <span className="min-w-0 flex-1 break-words">{line.title}</span>
-                    <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                      {ru.journal.progress(value)}
-                    </span>
-                  </span>
-                  <Progress value={value} className="h-1" aria-hidden />
-                </span>
+                <LineIcon className="text-gold" />
+                <span className="min-w-0 flex-1 text-[0.9375rem] break-words">{line.title}</span>
+                <Progress value={value} className="w-16 shrink-0" aria-hidden />
+                <Percent value={value} small />
               </Link>
             </li>
           );
         })}
       </ul>
     </section>
+  );
+}
+
+/** Процент — гравированной цифрой Forum, как в шапке цели. */
+function Percent({ value, small = false }: { value: number; small?: boolean }) {
+  return (
+    <span
+      className={`min-w-9.5 shrink-0 text-right font-heading tabular-nums leading-none tracking-[0.04em] text-gold-text ${small ? 'text-[0.9375rem]' : 'text-lg'}`}
+    >
+      {ru.journal.progress(value)}
+    </span>
   );
 }

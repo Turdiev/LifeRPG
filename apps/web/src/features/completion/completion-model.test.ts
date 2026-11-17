@@ -100,7 +100,7 @@ describe('completionView', () => {
     expect(completionView(data, changed(data, 'Q', 'C'))).toMatchObject({ days: 1 });
   });
 
-  it('gives the segments of the whole line and marks which of them fill up on the screen', () => {
+  it('names the goal under a closed chapter', () => {
     const data = tree([
       ['L', null, 'line'],
       ['C1', 'L', 'chapter', 'done'],
@@ -109,24 +109,16 @@ describe('completionView', () => {
       ['Q2', 'C2', 'quest'],
     ]);
 
-    const view = completionView(data, changed(data, 'Q1', 'C1'));
-
-    expect(view?.segments.map((s) => [s.id, s.done, s.total, s.active])).toEqual([
-      ['C1', 1, 1, false],
-      ['C2', 0, 1, false],
-    ]);
-    expect(view?.filling).toEqual(['C1']);
+    expect(completionView(data, changed(data, 'Q1', 'C1'))?.lineTitle).toBe('title L');
   });
 
-  it('fills every segment when the whole line is closed', () => {
+  it('has no goal line when the goal itself is closed', () => {
     const data = tree([
       ['L', null, 'line', 'done'],
       ['C1', 'L', 'chapter', 'done'],
       ['Q1', 'C1', 'quest', 'done'],
-      ['C2', 'L', 'chapter', 'done'],
-      ['Q2', 'C2', 'quest', 'done'],
     ]);
 
-    expect(completionView(data, changed(data, 'Q2', 'C2', 'L'))?.filling).toEqual(['C1', 'C2']);
+    expect(completionView(data, changed(data, 'Q1', 'C1', 'L'))?.lineTitle).toBeNull();
   });
 });

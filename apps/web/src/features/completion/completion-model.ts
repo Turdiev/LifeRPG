@@ -1,21 +1,17 @@
 import type { LineTreeResponse, Quest } from '@life-rpg/shared';
-import { buildLineView, type ProgressSegment, type TreeNode } from '@/features/line/line-model';
+import type { TreeNode } from '@/features/line/line-model';
 import { localDate } from '@/shared/lib/format';
 
 export type CompletionView = {
   kind: 'chapter' | 'line';
   id: string;
-  /** Цель, к которой относится шкала: у её отрезка «задания без главы» своя подсказка. */
-  lineId: string;
   title: string;
+  /** Цель под названием закрытой главы; у закрытой цели — `null`, её название уже в заголовке. */
+  lineTitle: string | null;
   /** Календарные дни от создания до закрытия включительно: закрытое в день создания — «за 1 день». */
   days: number;
   /** Выполненные задания внутри; отменённые не в счёт, как и в счётчике главы (docs/ux.md). */
   questsDone: number;
-  /** Шкала всей цели — та же, что на экране линии. */
-  segments: ProgressSegment[];
-  /** Отрезки, которые на экране заливаются с нуля: закрытая глава или, у цели, все. */
-  filling: string[];
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -31,17 +27,14 @@ export function completionView(data: LineTreeResponse, changed: readonly Quest[]
   const node = target && data.nodes.find((n) => n.id === target.id);
   if (!node || node.status !== 'done' || !node.completedAt) return null;
 
-  const lineView = buildLineView(data.nodes, null);
-  const segments = (lineView?.segments ?? []).map((s) => ({ ...s, active: false }));
+  const line = data.nodes.find((n) => n.parentId === null);
   return {
     kind: node.kind === 'line' ? 'line' : 'chapter',
     id: node.id,
-    lineId: lineView?.line.id ?? node.id,
     title: node.title,
+    lineTitle: node.kind === 'line' ? null : (line?.title ?? null),
     days: calendarDays(node.createdAt, node.completedAt),
     questsDone: descendants(data.nodes, node.id).filter((n) => n.kind === 'quest' && n.status === 'done').length,
-    segments,
-    filling: node.kind === 'line' ? segments.map((s) => s.id) : segments.filter((s) => s.id === node.id).map((s) => s.id),
   };
 }
 

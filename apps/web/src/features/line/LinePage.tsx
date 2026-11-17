@@ -1,13 +1,14 @@
 import { DomainError, parseQuestList, type DraftKind, type ParsedList } from '@life-rpg/domain';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ChevronLeft, Scroll } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApiError } from '@/shared/api/client';
 import { useDelayedFlag } from '@/shared/hooks/use-delayed-flag';
-import { formatDeadline, isOverdue, localToday, percent } from '@/shared/lib/format';
+import { daysOverdue, formatDeadline, isOverdue, localToday, percent } from '@/shared/lib/format';
+import { plural } from '@/shared/lib/plural';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
+import { BackIcon } from '@/shared/ui/icons';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { ChapterSection } from './ChapterSection';
 import { DoneGroup } from './DoneGroup';
@@ -109,6 +110,7 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
 
   const { line } = view;
   const lineLocked = line.status === 'paused' || line.status === 'cancelled';
+  const overdue = !lineLocked && line.status !== 'done' && isOverdue(line.deadline, today);
   const isEmpty =
     view.chapters.items.length + view.chapters.done.length + view.quests.items.length + view.quests.done.length === 0;
   const questRow = (quest: (typeof view.quests.items)[number]) => (
@@ -133,55 +135,59 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
 
   return (
     <LineActionsContext.Provider value={actions}>
-      <div className="space-y-5">
-        <BackLink />
+      <div className="space-y-3">
+        <header className="-mx-2 flex min-h-13 items-center gap-1.5">
+          <BackLink />
+          <h1 className={cn('min-w-0 flex-1 text-center type-heading break-words', lineLocked && 'text-muted-foreground')}>
+            {line.title}
+          </h1>
+          <NodeMenu node={line} locked={false} />
+        </header>
 
-        <header className="space-y-3">
-          <div className="flex items-start gap-2">
-            <Scroll className="mt-2 size-5 shrink-0 text-muted-foreground" aria-hidden />
-            <h1 className={cn('min-w-0 flex-1 type-display break-words', lineLocked && 'text-muted-foreground')}>
-              {line.title}
-            </h1>
-            <NodeMenu node={line} locked={false} className="-mt-1 -mr-2" />
-          </div>
-          <div className="flex items-center gap-3">
-            <SegmentedProgress
-              segments={view.segments}
-              lineId={line.id}
-              value={percent(view.progress)}
-              label={ru.line.progressLabel(line.title)}
-              muted={lineLocked}
-            />
-            <span className="w-10 text-right text-sm tabular-nums text-muted-foreground">
+        {/* Шапка цели — единственная карточка с золотыми уголками на этом экране. */}
+        {/* Без своей подписи: шкала внутри уже называется «Прогресс …», иначе скринридер прочтёт её дважды. */}
+        <section className="panel ornate relative px-4 pt-3.5 pb-3">
+          <div className="mb-1.5 flex items-baseline justify-between gap-3">
+            <span className="font-heading text-[2.5rem] leading-none tabular-nums tracking-[0.02em] text-gold-text">
               {ru.journal.progress(percent(view.progress))}
             </span>
+            {line.deadline && (
+              <span
+                className={cn(
+                  'text-right text-[0.8125rem] text-muted-foreground',
+                  overdue && 'font-medium text-overdue',
+                )}
+              >
+                {/* Та же фраза, что в журнале: «Срок прошёл N дней назад» вместо даты. */}
+                {overdue
+                  ? ru.journal.overdue(daysOverdue(line.deadline, today), plural(daysOverdue(line.deadline, today), ru.journal.overdueNoun))
+                  : ru.journal.deadline(formatDeadline(line.deadline, today))}
+              </span>
+            )}
           </div>
-          {line.deadline && (
-            <p
-              className={cn(
-                'text-sm text-muted-foreground',
-                !lineLocked && line.status !== 'done' && isOverdue(line.deadline, today) && 'font-medium text-overdue',
-              )}
-            >
-              {ru.journal.deadline(formatDeadline(line.deadline, today))}
-            </p>
-          )}
-        </header>
+          <SegmentedProgress
+            segments={view.segments}
+            lineId={line.id}
+            value={percent(view.progress)}
+            label={ru.line.progressLabel(line.title)}
+            muted={lineLocked}
+            labels
+          />
+        </section>
 
         <LineBanner line={line} today={today} />
 
         {isEmpty && !lineLocked && <p className="text-muted-foreground">{ru.line.empty}</p>}
 
-        {/* Одним списком с разделителями, без карточек: главы и задания без главы — уровни дерева, а не
-            отдельные блоки; карточка остаётся у активного квеста (docs/ux.md, «Решения по UX»). */}
-        <div className="divide-y">
+        {/* Главы — секции-панели, задания — строки внутри, этапы — на пунктирной нити (docs/ux.md,
+            «Решения по UX»). Уголков у глав нет: они остаются у шапки цели. */}
+        <div className="space-y-3">
           {view.chapters.items.map(chapterSection)}
-          {/* Без отступа слева: шеврон «Выполнено» — на одной линии с шевронами глав. */}
           <DoneGroup count={view.chapters.done.length} className="px-0">
-            <div className="divide-y border-t">{view.chapters.done.map(chapterSection)}</div>
+            <div className="space-y-3">{view.chapters.done.map(chapterSection)}</div>
           </DoneGroup>
           {view.quests.items.length + view.quests.done.length > 0 && (
-            <div className="-ml-1 py-1">
+            <div className="panel px-3.5 pb-1">
               {view.quests.items.map(questRow)}
               <DoneGroup count={view.quests.done.length}>{view.quests.done.map(questRow)}</DoneGroup>
             </div>
@@ -189,7 +195,7 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
         </div>
 
         {!lineLocked && (
-          <div>
+          <div className="space-y-2 pt-1">
             <InlineAdd parentId={line.id} kind="chapter" />
             <InlineAdd parentId={line.id} kind="quest" />
           </div>
@@ -254,10 +260,10 @@ function BackLink() {
     <Link
       to="/journal"
       search={{ status: 'open' }}
-      className="-ml-2 inline-flex h-11 items-center gap-1 rounded-lg px-2 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label={ru.line.back}
+      className="grid size-11 shrink-0 place-items-center rounded-full text-foreground outline-none hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-ring"
     >
-      <ChevronLeft className="size-4" aria-hidden />
-      {ru.line.back}
+      <BackIcon />
     </Link>
   );
 }
@@ -266,7 +272,7 @@ function LineSkeleton() {
   return (
     <div className="space-y-4" aria-hidden>
       <Skeleton className="h-8 w-2/3" />
-      <Skeleton className="h-2.5" />
+      <Skeleton className="h-24" />
       <Skeleton className="h-14" />
       <Skeleton className="h-14" />
       <Skeleton className="h-14" />

@@ -1,8 +1,7 @@
-import { ChevronRight, Swords } from 'lucide-react';
-import { percent } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { Checkbox } from '@/shared/ui/checkbox';
+import { ChevronRightIcon, FlagIcon } from '@/shared/ui/icons';
 import { ProgressRing } from '@/shared/ui/ProgressRing';
 import { DoneGroup } from './DoneGroup';
 import { InlineAdd } from './InlineAdd';
@@ -29,27 +28,37 @@ export function QuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
   const withMarker = (label: string) => (quest.isActive ? `${label}, ${ru.line.activeMarker.toLowerCase()}` : label);
 
   return (
-    <div>
-      <div className="flex min-h-11 items-center gap-1 pl-1">
-        {hasSteps ? (
+    // Строки заданий отделены линией; активное — золотая кромка слева и мягкий свет (docs/ux.md).
+    <div className="border-t first:border-t-0">
+      <div
+        className={cn(
+          'flex min-h-14 items-center gap-1',
+          quest.isActive && '-mx-3.5 border-l-2 border-l-gold bg-linear-to-r from-halo to-transparent to-85% pr-3.5 pl-3',
+        )}
+      >
+        {/* Отменённое задание — ромб с крестом и без кольца, даже если у него есть этапы (docs/ux.md). */}
+        {hasSteps && node.status !== 'cancelled' ? (
           <button
             type="button"
             disabled={disabled}
             onClick={() => toggle(node)}
             aria-label={checkLabel}
-            className="grid size-11 shrink-0 place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="grid size-11 shrink-0 place-items-center rounded-full outline-none focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
           >
-            <ProgressRing value={done ? 100 : percent(quest.progress)} muted={quest.locked} />
+            <ProgressRing
+              done={done ? quest.progress.total : quest.progress.done}
+              total={quest.progress.total}
+              muted={quest.locked}
+            />
           </button>
         ) : (
-          <span className="grid size-11 shrink-0 place-items-center">
-            <Checkbox
-              checked={done}
-              disabled={disabled}
-              onCheckedChange={() => toggle(node)}
-              aria-label={checkLabel}
-            />
-          </span>
+          <Checkbox
+            checked={done}
+            cancelled={node.status === 'cancelled'}
+            disabled={disabled}
+            onCheckedChange={() => toggle(node)}
+            aria-label={checkLabel}
+          />
         )}
         <button
           type="button"
@@ -57,14 +66,24 @@ export function QuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
           // В раскрытом виде кнопка уже не сворачивает, а открывает детали — aria-expanded только у шеврона.
           aria-label={withMarker(expanded ? ru.line.openDetails(node.title) : ru.line.expand(node.title))}
           className={cn(
-            'flex min-h-11 flex-1 items-center gap-2 rounded-md py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'min-h-11 min-w-0 flex-1 py-2 text-left leading-snug font-medium outline-none focus-visible:outline-2 focus-visible:outline-ring',
             (done || quest.locked) && 'text-muted-foreground',
-            node.status === 'cancelled' && 'line-through',
           )}
         >
-          <span className="min-w-0 flex-1 break-words">{node.title}</span>
+          <span
+            className={cn(
+              'block break-words',
+              done && 'line-through decoration-gold-dim',
+              node.status === 'cancelled' && 'line-through',
+            )}
+          >
+            {node.title}
+          </span>
           {quest.isActive && (
-            <Swords className="size-4 shrink-0 text-quest" aria-hidden />
+            <span aria-hidden className="mt-0.5 flex items-center gap-1.25 text-xs font-normal text-gold-text">
+              <FlagIcon className="size-3.5" />
+              {ru.line.activeMarker}
+            </span>
           )}
         </button>
         <button
@@ -73,14 +92,15 @@ export function QuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
           aria-expanded={expanded}
           aria-controls={stepsId}
           aria-label={expanded ? ru.line.collapse(node.title) : ru.line.expand(node.title)}
-          className="grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-ring"
         >
-          <ChevronRight className={cn('size-4 transition-transform', expanded && 'rotate-90')} aria-hidden />
+          <ChevronRightIcon className={cn('size-4 transition-transform', expanded && 'rotate-90')} />
         </button>
       </div>
 
       {expanded && (
-        <div id={stepsId} className="ml-6 border-l pl-2">
+        // Этапы — на пунктирной золотой нити под кольцом задания.
+        <div id={stepsId} className="mb-1 ml-5 border-l border-dashed border-border-strong pl-1.5">
           {quest.steps.items.map((step) => (
             <StepRow key={step.node.id} step={step} />
           ))}

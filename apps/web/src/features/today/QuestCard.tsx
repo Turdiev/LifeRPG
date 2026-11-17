@@ -1,5 +1,4 @@
 import { Link } from '@tanstack/react-router';
-import { Check, Swords } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { isPending } from '@/features/line/line-actions';
 import type { TreeNode } from '@/features/line/line-model';
@@ -9,7 +8,9 @@ import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
 import { Checkbox } from '@/shared/ui/checkbox';
+import { FlagIcon, LineIcon, SparksIcon, StepIcon } from '@/shared/ui/icons';
 import { Progress } from '@/shared/ui/progress';
+import { MAX_PIPS, StepPips } from '@/shared/ui/StepPips';
 import type { TodayQuestView } from './today-model';
 
 type QuestCardProps = {
@@ -21,7 +22,10 @@ type QuestCardProps = {
   onToggle: (node: TreeNode) => void;
 };
 
-/** Карточка активного квеста — единственное место с золотом на экране (docs/ux.md, «Цвета статусов»). */
+/**
+ * Карточка активного квеста — единственная карточка с золотыми уголками на экране (docs/ux.md,
+ * «Атмосфера»). Следующий этап — крупно, в подсвеченной полосе под большим пальцем.
+ */
 export function QuestCard({ view, finished, focusTitle, onToggle }: QuestCardProps) {
   const { quest, line, chapter, steps } = view;
   const cardRef = useRef<HTMLElement>(null);
@@ -46,39 +50,46 @@ export function QuestCard({ view, finished, focusTitle, onToggle }: QuestCardPro
     <article
       ref={cardRef}
       aria-labelledby={`quest-${quest.id}`}
-      className={cn(
-        'relative overflow-hidden rounded-xl border bg-card p-4 transition-colors duration-500 motion-reduce:transition-none',
-        finished ? 'border-success/60' : 'border-quest ring-1 ring-quest',
-      )}
+      className="panel ornate relative px-4 pt-4 pb-1.5"
     >
       {/* Блик появляется вместе с «Квест пройден» и проходит по карточке один раз. Начальный сдвиг
           задаёт fill-mode `both` анимации: класс `-translate-x-full` в Tailwind v4 — отдельное
           свойство `translate`, оно сложилось бы с `transform` из keyframes, и блик застыл бы на карточке. */}
+      {/* Обрезка — у слоя блика, а не у карточки: overflow-hidden на ней срезал бы золотые уголки на рамке. */}
       {finished && (
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent via-quest/20 to-transparent motion-safe:animate-quest-shimmer motion-reduce:hidden"
-        />
+        <span aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden">
+          <span className="absolute inset-0 bg-linear-to-r from-transparent via-gold/20 to-transparent motion-safe:animate-quest-shimmer" />
+        </span>
       )}
-      <p className="text-sm text-muted-foreground">{chapter ? ru.today.path(line.title, chapter.title) : line.title}</p>
-      {/* На компьютере «Сегодня» — узкая боковая колонка: там 31 px давит на соседний экран, хватает 25. */}
-      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className="mt-1 flex items-start gap-2 type-display break-words outline-none lg:type-title">
-        <Swords className={cn('mt-2 size-5 shrink-0 lg:mt-1.25', finished ? 'text-muted-foreground' : 'text-quest')} aria-hidden />
+      <p className="flex items-start gap-2 text-[0.8125rem] text-muted-foreground">
+        <LineIcon className="mt-px size-4 text-gold" />
+        <span className="min-w-0 break-words">{chapter ? ru.today.path(line.title, chapter.title) : line.title}</span>
+      </p>
+      {/* Метка видна глазами; скринридер слышит её в начале заголовка. */}
+      {!finished && (
+        <p aria-hidden className="mt-3 mb-0.5 flex items-center gap-1.5 text-[0.8125rem] font-medium text-gold-text">
+          <FlagIcon className="size-4" />
+          {ru.today.activeQuest}
+        </p>
+      )}
+      <h2 ref={titleRef} tabIndex={-1} id={`quest-${quest.id}`} className={cn('type-title break-words outline-none', finished && 'mt-3')}>
         {!finished && <span className="sr-only">{ru.today.activeQuest}: </span>}
-        <span className="min-w-0 flex-1">{quest.title}</span>
+        {quest.title}
       </h2>
 
       {steps && (
-        <div className="mt-3 flex items-center gap-3">
-          <Progress value={percent(steps)} aria-label={ru.line.progressLabel(quest.title)} className="flex-1" />
-          <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-            {ru.today.steps(steps.done, steps.total, plural(steps.total, ru.today.stepsNoun))}
-          </span>
+        <div className="mt-2.5 flex items-center gap-3 text-[0.8125rem] text-muted-foreground">
+          {steps.total <= MAX_PIPS ? (
+            <StepPips done={steps.done} total={steps.total} />
+          ) : (
+            <Progress value={percent(steps)} aria-label={ru.line.progressLabel(quest.title)} className="w-28" />
+          )}
+          <span className="tabular-nums">{ru.today.steps(steps.done, steps.total, plural(steps.total, ru.today.stepsNoun))}</span>
         </div>
       )}
 
       {view.shown.length > 0 && (
-        <ul aria-label={ru.today.stepsLabel(quest.title)} className="mt-3 -mx-1">
+        <ul aria-label={ru.today.stepsLabel(quest.title)} className="mt-2">
           {view.shown.map((step) => (
             <li key={step.id}>
               <StepLine step={step} next={step.id === view.nextStepId} disabled={finished} onToggle={onToggle} />
@@ -90,21 +101,21 @@ export function QuestCard({ view, finished, focusTitle, onToggle }: QuestCardPro
         <Link
           to="/line/$lineId"
           params={{ lineId: line.id }}
-          className="ml-10 inline-flex min-h-11 items-center rounded-md px-1 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="ml-11 inline-flex min-h-9 items-center rounded-full px-1 text-[0.8125rem] text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-ring"
         >
           {ru.today.more(view.moreCount, plural(view.moreCount, ru.today.moreNoun))}
         </Link>
       )}
 
       {finished ? (
-        <p ref={doneRef} tabIndex={-1} className="mt-3 flex items-center gap-2 font-medium outline-none" role="status">
-          <Check className="size-5 text-success" aria-hidden />
+        <p ref={doneRef} tabIndex={-1} className="mt-3 mb-2.5 flex items-center gap-2 font-medium text-gold-text outline-none" role="status">
+          <SparksIcon className="text-gold" />
           {ru.today.questDone}
         </p>
       ) : (
         !steps && (
-          <Button className="mt-4 h-11 w-full" disabled={isPending(quest)} onClick={() => onToggle(quest)}>
-            <Check data-icon="inline-start" aria-hidden />
+          <Button className="mt-4 mb-2.5 w-full" disabled={isPending(quest)} onClick={() => onToggle(quest)}>
+            <StepIcon />
             {ru.today.completeQuest}
           </Button>
         )
@@ -124,20 +135,31 @@ function StepLine({ step, next, disabled, onToggle }: StepLineProps) {
   return (
     <label
       className={cn(
-        'flex cursor-pointer items-center gap-3 rounded-lg px-1 has-disabled:cursor-default',
-        next ? 'min-h-14 text-xl' : 'min-h-11',
+        'flex cursor-pointer items-center gap-1.5 has-disabled:cursor-default',
+        next
+          ? '-mx-4 mt-2.5 border-t border-border-strong bg-linear-to-r from-halo to-transparent to-80% py-2.5 pr-3.5 pl-2.5'
+          : 'min-h-12 border-t',
         done && 'text-muted-foreground',
       )}
     >
-      <span className="grid size-8 shrink-0 place-items-center">
-        <Checkbox
-          checked={done}
-          disabled={disabled || isPending(step)}
-          onCheckedChange={() => onToggle(step)}
-          className={cn(next && 'size-6 [&_svg]:size-4!', disabled && 'disabled:opacity-100')}
-        />
+      <Checkbox
+        checked={done}
+        large={next}
+        disabled={disabled || isPending(step)}
+        onCheckedChange={() => onToggle(step)}
+        className={cn(disabled && 'disabled:opacity-100')}
+      />
+      <span className="min-w-0 flex-1 py-1.5 break-words">
+        {next && <span className="block text-xs text-muted-foreground">{ru.today.nextStep}</span>}
+        <span
+          className={cn(
+            next ? 'block text-lg leading-snug font-medium' : 'text-[0.9375rem] leading-snug',
+            done && 'line-through decoration-gold-dim',
+          )}
+        >
+          {step.title}
+        </span>
       </span>
-      <span className="min-w-0 flex-1 py-2 break-words">{step.title}</span>
     </label>
   );
 }

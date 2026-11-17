@@ -19,7 +19,7 @@ export function NextQuestCard({ next, taking, onTake, onChooseOther }: NextQuest
   return (
     <section
       aria-labelledby="next-quest"
-      className="rounded-xl bg-card p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:animation-duration-300"
+      className="panel p-4 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:animation-duration-300"
     >
       <h2 id="next-quest" className="type-heading break-words">
         {ru.today.next.title(next.quest.title)}
@@ -28,7 +28,7 @@ export function NextQuestCard({ next, taking, onTake, onChooseOther }: NextQuest
       <div className="mt-4 flex flex-wrap gap-2">
         {/* aria-disabled, а не disabled: фокус остаётся на кнопке, пока сервер отвечает. */}
         <Button
-          className="h-11 aria-disabled:opacity-60"
+          className="flex-1 aria-disabled:opacity-60"
           aria-disabled={taking}
           aria-busy={taking}
           onClick={() => !taking && onTake()}
@@ -36,7 +36,7 @@ export function NextQuestCard({ next, taking, onTake, onChooseOther }: NextQuest
           {ru.today.next.take}
         </Button>
         {onChooseOther && (
-          <Button variant="outline" className="h-11" onClick={onChooseOther}>
+          <Button variant="outline" className="flex-1" onClick={onChooseOther}>
             {ru.today.next.other}
           </Button>
         )}
