@@ -12,7 +12,9 @@ const toggleVariants = cva(
       variant: {
         default: "bg-transparent",
         // Фильтры-«таблетки» (docs/ux.md, «Журнал»): выбранная — золотая кромка и мягкий свет внутри.
-        outline: "rounded-full border border-border bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:border-gold data-[state=on]:bg-surface-2 data-[state=on]:text-gold-text data-[state=on]:shadow-[inset_0_0_12px_var(--halo)]",
+        // На пергаменте бронзовый текст почти сливается с приглушённым, а свет белый — нужна бронзовая подложка.
+        // Бронзовый текст на ней — 4,25:1, ниже AA, поэтому текст тёмный: бронзу несут подложка и кромка.
+        outline: "rounded-full border border-border bg-transparent text-muted-foreground hover:bg-transparent hover:text-foreground data-[state=on]:border-gold data-[state=on]:bg-gold/12 data-[state=on]:text-foreground dark:data-[state=on]:bg-surface-2 dark:data-[state=on]:text-gold-text dark:data-[state=on]:shadow-[inset_0_0_12px_var(--halo)]",
       },
       size: {
         default:

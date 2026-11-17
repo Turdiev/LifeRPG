@@ -110,7 +110,8 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
 
   const { line } = view;
   const lineLocked = line.status === 'paused' || line.status === 'cancelled';
-  const overdue = !lineLocked && line.status !== 'done' && isOverdue(line.deadline, today);
+  // Пауза не отменяет срок — как в карточке журнала; у отменённой и достигнутой цели срока больше нет.
+  const overdue = (line.status === 'open' || line.status === 'paused') && isOverdue(line.deadline, today);
   const isEmpty =
     view.chapters.items.length + view.chapters.done.length + view.quests.items.length + view.quests.done.length === 0;
   const questRow = (quest: (typeof view.quests.items)[number]) => (

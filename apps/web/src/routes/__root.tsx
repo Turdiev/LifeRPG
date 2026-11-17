@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { CheckboxDefs } from '@/shared/ui/checkbox';
+import { NotFound } from '@/shared/ui/NotFound';
 
 /**
  * Каркас приложения с вкладками — в `_app.tsx`: экрану входа он не нужен. Градиент ромбов — здесь:
@@ -15,4 +16,5 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       </>
     );
   },
+  notFoundComponent: NotFound,
 });
