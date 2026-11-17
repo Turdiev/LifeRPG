@@ -96,7 +96,7 @@ export function TodayPage() {
 
       {/* Цель карточки уже видна под ней строкой прогресса — в списке её не повторяем. */}
       <TodayLines
-        title={data.active ? ru.today.otherLines : ru.today.linesInProgress}
+        title={shown ? ru.today.otherLines : ru.today.linesInProgress}
         lines={data.otherLines.filter((line) => line.id !== shown?.lineId)}
       />
 
