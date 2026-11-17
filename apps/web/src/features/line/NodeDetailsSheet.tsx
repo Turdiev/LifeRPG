@@ -1,9 +1,9 @@
 import { buildTree, canBeActive, isBranchLocked } from '@life-rpg/domain';
-import { XIcon } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
+import { ChapterIcon, CloseIcon, FlagIcon, LineIcon, QuestIcon, StepIcon } from '@/shared/ui/icons';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet';
@@ -77,11 +77,11 @@ function DetailsPanel({ onClose, children }: { onClose: () => void; children: Re
       tabIndex={-1}
       aria-labelledby={DETAILS_TITLE_ID}
       onKeyDown={(event) => event.key === 'Escape' && onClose()}
-      className="fixed inset-y-0 right-0 z-30 flex w-80 flex-col gap-4 overflow-y-auto border-l bg-popover pt-4 text-sm text-popover-foreground outline-none"
+      className="fixed inset-y-0 right-0 z-30 flex w-80 flex-col gap-4 overflow-y-auto border-l bg-surface-1 pt-5 text-sm text-popover-foreground outline-none"
     >
       {children}
       <Button variant="ghost" size="icon" className="absolute top-3 right-3" onClick={onClose}>
-        <XIcon aria-hidden />
+        <CloseIcon />
         <span className="sr-only">{ru.common.close}</span>
       </Button>
     </aside>
@@ -91,6 +91,8 @@ function DetailsPanel({ onClose, children }: { onClose: () => void; children: Re
 const DETAILS_TITLE_ID = 'node-details-title';
 type DetailsVariant = 'sheet' | 'panel';
 type FieldsBody = { title?: string; description?: string | null; deadline?: string | null };
+
+const kindIcons = { line: LineIcon, chapter: ChapterIcon, quest: QuestIcon, step: StepIcon } as const;
 
 type DetailsProps = Omit<NodeDetailsSheetProps, 'onClose' | 'node'> & { node: TreeNode; variant: DetailsVariant };
 
@@ -124,10 +126,14 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
   const showMakeActive =
     !isPending(node) && node.kind === 'quest' && node.id !== activeQuestId && canBeActive(tree, node.id);
 
+  const KindIcon = kindIcons[node.kind];
   const meta = (
     <>
-      {ru.line.details.kind[node.kind]}
-      {path.length > 0 && <span className="block">{path.join(' › ')}</span>}
+      <span className="flex items-center gap-2 text-gold-text">
+        <KindIcon className="size-4 text-gold" />
+        {ru.line.details.kind[node.kind]}
+      </span>
+      {path.length > 0 && <span className="mt-0.5 block break-words">{path.join(' › ')}</span>}
     </>
   );
 
@@ -140,7 +146,15 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
           <SheetTitle className="sr-only">{node.title}</SheetTitle>
         </SheetHeader>
       ) : (
-        <header className="px-4 pr-14 text-muted-foreground">
+        <header className="px-4 pr-14 text-[0.8125rem] text-muted-foreground">
+          {/* Медаль — деталь как описание предмета в инвентаре (макет docs/design/rpg-mockups.html). Сдвиг
+              компенсирует несимметричные поля шапки: справа место под кнопку «Закрыть». */}
+          <span
+            aria-hidden
+            className="relative mx-auto mt-1 mb-4 grid translate-x-5 size-33 place-items-center rounded-full bg-[radial-gradient(circle,var(--surface-3)_0_52%,transparent_53%),conic-gradient(var(--gold-dim)_0_2deg,transparent_2deg_15deg)] text-gold drop-shadow-[0_0_16px_var(--glow)] before:absolute before:inset-3.5 before:rounded-full before:border before:border-gold-dim"
+          >
+            <KindIcon className="size-13 stroke-[1.2]" />
+          </span>
           <h2 id={DETAILS_TITLE_ID} className="sr-only">
             {node.title}
           </h2>
@@ -159,9 +173,9 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
             onChange={(event) => setTitle(event.target.value)}
             onBlur={() => (title.trim() ? save() : setTitle(node.title))}
             onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
-            // Размеры роли type-title, но обычными классами: tailwind-merge снимает ими `text-base` и
-            // `md:text-sm` из Input, а самописную роль он не знает — и на компьютере осталось бы 14 px.
-            className="h-11 font-heading text-[1.5625rem] leading-[1.2] font-bold md:text-[1.5625rem]"
+            // Размеры роли type-title, но обычными классами: tailwind-merge снимает ими `text-base` из Input,
+            // а самописную роль он не знает — и осталось бы 16 px.
+            className="font-heading text-2xl leading-[1.2] tracking-[0.02em]"
           />
         </div>
         <div className="grid gap-2">
@@ -186,13 +200,18 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
             readOnly={readOnly}
             onChange={(event) => setDeadline(event.target.value)}
             onBlur={save}
-            className="h-11 w-fit"
+            className="w-fit"
           />
         </div>
 
         {!isPending(node) && (
           <div className="grid gap-2 pt-2">
-            {showMakeActive && <Button onClick={() => onMakeActive(node.id)}>{ru.line.actions.makeActive}</Button>}
+            {showMakeActive && (
+              <Button size="lg" onClick={() => onMakeActive(node.id)}>
+                <FlagIcon />
+                {ru.line.actions.makeActive}
+              </Button>
+            )}
             {canPause && node.status === 'open' && (
               <Button variant="outline" onClick={() => run(node, 'pause')}>
                 {ru.line.actions.pause}
@@ -213,7 +232,8 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
                 {ru.line.actions.restore}
               </Button>
             )}
-            <Button variant="destructive" onClick={() => askDelete(node)}>
+            {/* Тихая ссылка, а не красная кнопка: удаление и так переспросит диалогом (docs/ux.md). */}
+            <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => askDelete(node)}>
               {ru.line.actions.delete}
             </Button>
           </div>

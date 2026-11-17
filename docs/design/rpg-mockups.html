@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIFE RPG — визуальный язык: золото и руны</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Forum&family=Onest:wght@400;500;600&family=Cormorant+SC:wght@500;600&family=Source+Sans+3:wght@400;600&family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== Токены: тёмная тема («обсидиан и золото») и светлая («пергамент») ===== */
+:root{
+  --bg:#0d0b09; --s1:#15110d; --s2:#1e1812; --s3:#2a2218;
+  --line:#3b2f1f; --line-hi:#6b5326;
+  --gold:#dcae52; --gold-hi:#f4d78c; --gold-lo:#8f6e2e; --on-gold:#1a1209;
+  --text:#ece1ca; --muted:#a69884;
+  --calm:#e0975c;      /* просрочка: тёплый янтарь, не красный */
+  --pause:#93a7c2;     /* пауза: холодный сталь-синий */
+  --danger:#b4533a;
+  --glow:rgba(220,174,82,.38); --vig:rgba(0,0,0,.6); --halo:rgba(220,174,82,.12);
+  --serif:"Forum","Cormorant Garamond",Georgia,serif;
+  --sans:"Onest",system-ui,sans-serif;
+}
+.light{
+  --bg:#e6d9b8; --s1:#f0e5c9; --s2:#f6eed9; --s3:#fbf5e6;
+  --line:#c1ad7e; --line-hi:#9a7a35;
+  --gold:#85560f; --gold-hi:#a8731c; --gold-lo:#b99655; --on-gold:#f8f0dc;
+  --text:#2a1c0d; --muted:#65553b;
+  --calm:#9a4a17; --pause:#4d6385; --danger:#a0432b;
+  --glow:rgba(150,100,20,.28); --vig:rgba(110,75,25,.38); --halo:rgba(255,248,225,.5);
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+*{box-sizing:border-box;margin:0}
+html{background:#070605}
+body{font:400 16px/1.55 var(--sans);color:#e7dcc6;padding:48px 32px 120px;max-width:1560px;margin:0 auto}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+
+/* ===== Страница-презентация ===== */
+.pg>header h1{font:400 clamp(34px,5vw,60px)/1.05 var(--serif);letter-spacing:.14em;text-transform:uppercase;color:#f4d78c}
+.pg .lead{max-width:62ch;margin-top:18px;color:#bfb29b}
+.pg>h2{font:400 28px/1.2 var(--serif);letter-spacing:.2em;text-transform:uppercase;color:#dcae52;margin:88px 0 8px}
+.pg .sub{color:#a69884;max-width:70ch;margin-bottom:28px}
+.pg>h3{font:400 20px/1.3 var(--serif);letter-spacing:.06em;color:#ece1ca;margin:32px 0 12px}
+.rail{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+figure{display:flex;flex-direction:column;gap:12px}
+figcaption{font-size:14px;color:#a69884;max-width:390px}
+figcaption b{color:#ece1ca;font-weight:500}
+
+/* ===== Три трактовки ===== */
+.dirs{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px}
+.dir{padding:26px;border:1px solid var(--d-line);background:var(--d-bg);color:var(--d-text);font-family:var(--d-body);display:flex;flex-direction:column;gap:16px;position:relative}
+.dir h4{font:400 26px/1.15 var(--d-head);color:var(--d-acc);letter-spacing:var(--d-ls,.04em)}
+.dir .who{font-size:13px;color:var(--d-mut)}
+.dir p{font-size:15px}
+.dir .sw{display:flex;gap:6px;flex-wrap:wrap}
+.dir .sw i{display:block;width:62px;padding:34px 0 4px;font:11px/1.2 var(--sans);font-style:normal;text-align:center;color:#fff;border:1px solid var(--d-line);position:relative}
+.dir .sw i span{position:absolute;inset:auto 0 3px;mix-blend-mode:normal;color:var(--d-text);font-size:10px;background:var(--d-bg);padding:1px 0}
+.dir .typ{font:400 24px/1.2 var(--d-head);color:var(--d-text);border-top:1px solid var(--d-line);padding-top:14px}
+.dir .typ small{display:block;font:400 14px/1.4 var(--d-body);color:var(--d-mut);margin-top:4px}
+.dir svg.pf{width:100%;height:70px;overflow:visible}
+.dir .icons{display:flex;gap:18px;color:var(--d-acc)}
+.dir .icons svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dir dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;border-top:1px solid var(--d-line);padding-top:14px}
+.dir dt{color:var(--d-mut)} .dir dd{color:var(--d-text)}
+.dir.a{--d-bg:#0d0b09;--d-line:#3b2f1f;--d-text:#ece1ca;--d-mut:#a69884;--d-acc:#dcae52;--d-head:"Forum",serif;--d-body:"Onest",sans-serif;--d-ls:.12em}
+.dir.b{--d-bg:#0a1118;--d-line:#25384a;--d-text:#e4edf2;--d-mut:#8fa5b5;--d-acc:#9fd3ea;--d-head:"Cormorant SC",serif;--d-body:"Source Sans 3",sans-serif;--d-ls:.1em}
+.dir.c{--d-bg:#e9dcbd;--d-line:#b59c68;--d-text:#2a1d12;--d-mut:#6a583c;--d-acc:#8e2b1e;--d-head:"Alegreya",serif;--d-body:"Alegreya Sans",sans-serif}
+.dir .pick{position:absolute;top:0;right:0;padding:6px 14px;background:#dcae52;color:#1a1209;font:600 13px var(--sans)}
+
+/* ===== Телефон ===== */
+.phone{width:390px;height:844px;flex:none;position:relative;overflow:hidden;border-radius:38px;background:var(--bg);color:var(--text);font:400 15px/1.45 var(--sans);box-shadow:0 0 0 1px #2c2418,0 30px 70px #000a;isolation:isolate}
+.phone::before,.desk::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(120% 55% at 50% -5%,var(--halo),transparent 65%),radial-gradient(130% 100% at 50% 45%,transparent 50%,var(--vig))}
+.sb{position:absolute;top:0;left:0;right:0;height:44px;padding:15px 28px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:500;color:var(--muted);z-index:2}
+.scr{position:absolute;inset:44px 0 78px;overflow:hidden;padding:2px 18px 0;z-index:1;-webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}
+.scr.full{bottom:0}
+.nav{position:absolute;bottom:0;left:0;right:0;height:78px;z-index:3;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);background:linear-gradient(transparent,var(--bg) 40%)}
+.nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:12px;color:var(--muted);text-decoration:none;min-height:44px;position:relative}
+.nav a[aria-current]{color:var(--gold)}
+.nav a[aria-current]::before{content:"";position:absolute;top:-1px;width:44px;height:2px;background:var(--gold);box-shadow:0 0 12px var(--glow)}
+.nav .ic{width:24px;height:24px}
+
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.g{color:var(--gold)} .ic.m{color:var(--muted)}
+
+/* ===== Заголовки экранов ===== */
+.top{display:flex;align-items:center;gap:6px;min-height:52px}
+.top h1{flex:1;font:400 21px/1.2 var(--serif);letter-spacing:.26em;text-transform:uppercase;color:var(--gold-hi)}
+.light .top h1{color:var(--gold)}
+.top h1.t2{letter-spacing:.04em;text-transform:none;font-size:20px;text-align:center}
+.ib{width:44px;height:44px;display:grid;place-items:center;background:none;border:0;color:var(--text);cursor:pointer;border-radius:50%}
+.ib:hover{background:var(--s2)}
+
+/* ===== Поверхности: три уровня ===== */
+.panel{position:relative;background:linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--line);border-radius:3px}
+.orn::before{content:"";position:absolute;inset:-1px;pointer-events:none;z-index:1;
+  --g:linear-gradient(var(--gold),var(--gold));
+  background:var(--g) 0 0/16px 1px,var(--g) 0 0/1px 16px,var(--g) 100% 0/16px 1px,var(--g) 100% 0/1px 16px,var(--g) 0 100%/16px 1px,var(--g) 0 100%/1px 16px,var(--g) 100% 100%/16px 1px,var(--g) 100% 100%/1px 16px;
+  background-repeat:no-repeat}
+.hr{display:flex;align-items:center;gap:10px;color:var(--gold-lo);margin:14px 0}
+.hr::before,.hr::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--gold-lo),transparent)}
+.hr i{width:7px;height:7px;transform:rotate(45deg);border:1px solid var(--gold)}
+
+/* ===== Кнопки со срезанными углами ===== */
+.btn{--ch:polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px);
+  position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;width:100%;border:0;cursor:pointer;
+  font:600 16px/1 var(--sans);color:var(--on-gold);background:var(--gold-hi);clip-path:var(--ch);filter:none}
+.btn::before{content:"";position:absolute;inset:1px;z-index:-1;clip-path:var(--ch);background:linear-gradient(180deg,var(--gold-hi),var(--gold))}
+.light .btn::before{background:linear-gradient(180deg,#a8731c,#85560f)}
+.btn.ghost{color:var(--text);background:var(--gold-lo)}
+.btn.ghost::before{background:var(--s1)}
+.btn.danger{color:#fff;background:var(--danger)}
+.btn.danger::before{background:var(--danger)}
+.btn.sm{min-height:44px;font-size:15px;width:auto}
+.btn:active{transform:translateY(1px)}
+.lnk{background:none;border:0;color:var(--gold);font:500 15px var(--sans);min-height:44px;padding:0 10px;cursor:pointer}
+.lnk.mute{color:var(--muted)}
+
+/* ===== Чекбокс-ромб: открыт / выполнен / пауза / отмена =====
+   Статус читается по форме и значку, а не по цвету. Зона касания 44×44, ромб 28 */
+.chk{position:relative;width:44px;height:44px;flex:none;display:grid;place-items:center;background:none;border:0;padding:0;cursor:pointer;color:var(--gold)}
+.chk svg{width:28px;height:28px;overflow:visible;transition:transform .18s}
+.chk[data-s=pause],.chk[data-s=cancel]{cursor:default}
+.chk:hover[data-s=open] svg{filter:drop-shadow(0 0 5px var(--glow))}
+.chk[data-s=done] svg{filter:drop-shadow(0 0 6px var(--glow))}
+.chk.big{width:52px;height:52px}.chk.big svg{width:34px;height:34px}
+.chk .ring{position:absolute;width:28px;height:28px;border:2px solid var(--gold-hi);transform:rotate(45deg) scale(.6);opacity:0;pointer-events:none}
+.chk.big .ring{width:34px;height:34px}
+.chk.pop svg{animation:pop .42s cubic-bezier(.2,1.5,.4,1)}
+.chk.pop .ring{animation:ring .7s ease-out}
+@keyframes pop{0%{transform:scale(.8)}55%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes ring{0%{opacity:.9;transform:rotate(45deg) scale(.7)}100%{opacity:0;transform:rotate(45deg) scale(2.3)}}
+
+/* ===== Строки ===== */
+.row{display:flex;align-items:center;gap:4px;min-height:48px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .t{flex:1;min-width:0;font-size:15px;line-height:1.35}
+.row.is-done .t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--gold-lo)}
+.row.is-off .t{color:var(--muted)}
+.tag{font-size:12px;color:var(--muted);white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;min-height:24px;padding:0 10px;border:1px solid var(--line-hi);border-radius:99px;font-size:12px;color:var(--gold)}
+.pill.pause{color:var(--pause);border-color:var(--pause)}
+.pill.calm{color:var(--calm);border-color:var(--calm)}
+
+/* ===== Прогресс ===== */
+.bar{height:6px;background:var(--s3);border:1px solid var(--line);position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;width:var(--p);background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi));box-shadow:0 0 10px var(--glow)}
+.bar.paused i{background:repeating-linear-gradient(135deg,var(--pause) 0 4px,transparent 4px 7px);box-shadow:none}
+.pct{font:400 18px/1 var(--serif);letter-spacing:.04em;color:var(--gold-hi);min-width:38px;text-align:right}
+.light .pct{color:var(--gold)}
+.pb{display:flex;align-items:center;gap:12px}.pb .bar{flex:1}
+.pips{display:flex;gap:9px;align-items:center;padding:2px 3px}
+.pip{width:9px;height:9px;transform:rotate(45deg);border:1px solid var(--gold-lo)}
+.pip.on{background:var(--gold);border-color:var(--gold-hi);box-shadow:0 0 6px var(--glow)}
+.ring-p{position:relative;display:inline-grid;place-items:center;flex:none}
+.ring-p svg{position:absolute;inset:0}
+.ring-p b{font:600 10px var(--sans);letter-spacing:.02em;position:relative}
+
+/* Дорога: главы — вехи на золотой нити */
+.road{display:flex;padding-right:8px}
+.rc{position:relative;flex:var(--w) 1 0;min-width:0}
+.rc .tr{height:4px;margin:9px 11px 9px 0;background:var(--s3);outline:1px solid var(--line);position:relative}
+.rc .tr i{position:absolute;inset:0 auto 0 0;width:var(--p);background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi));box-shadow:0 0 8px var(--glow)}
+.rc .nd{position:absolute;right:1px;top:4px;width:13px;height:13px;transform:rotate(45deg);border:1.5px solid var(--gold-lo);background:var(--bg);z-index:1}
+.rc .nd.on{background:var(--gold);border-color:var(--gold-hi);box-shadow:0 0 8px var(--glow)}
+.rc .lb{display:block;margin-top:2px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px}
+
+/* ===== «Сегодня» ===== */
+.hello h2{font:400 27px/1.2 var(--serif);letter-spacing:.03em}
+.hello p{color:var(--muted);font-size:14px}
+.quest{padding:16px 16px 6px;margin-top:12px}
+.path{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.qlab{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gold);margin:12px 0 2px;font-weight:500}
+.quest h3{font:400 24px/1.2 var(--serif);letter-spacing:.02em}
+.quest .pw{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:13px;color:var(--muted)}
+.next{display:flex;align-items:center;gap:6px;margin:14px -16px 0;padding:10px 14px 10px 10px;border-top:1px solid var(--line-hi);background:linear-gradient(90deg,var(--halo),transparent 80%)}
+.next small{display:block;font-size:12px;color:var(--muted)}
+.next b{display:block;font:500 18px/1.3 var(--sans)}
+.steps{margin-top:6px;padding-left:2px}
+.more{display:block;margin:0 0 0 52px;background:none;border:0;color:var(--muted);font-size:13px;min-height:36px;cursor:pointer;text-align:left}
+.gl{margin-top:8px;padding:12px 4px 0;border-top:1px solid var(--line)}
+.gl .pb{margin-bottom:4px}
+.gl .gt{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;font-size:14px}
+.oth{margin-top:8px}
+.oth .row{min-height:54px;gap:12px;padding:0 4px}
+.oth .bar{width:64px;flex:none}
+.oth h4{font:500 12px var(--sans);color:var(--muted);margin:10px 4px 0}
+
+/* ===== Журнал ===== */
+.filters{display:flex;gap:8px;overflow:hidden;margin:2px 0 12px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.desk .filters{-webkit-mask-image:none;mask-image:none;flex-wrap:wrap}
+.fl{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--line);background:none;color:var(--muted);font:500 14px var(--sans);white-space:nowrap;cursor:pointer;border-radius:99px}
+.fl b{font-weight:600;color:var(--text)}
+.fl[aria-selected=true]{border-color:var(--gold);color:var(--gold-hi);background:var(--s2);box-shadow:inset 0 0 12px var(--halo)}
+.light .fl[aria-selected=true]{color:var(--gold)}
+.goal{padding:14px 14px 12px;margin-bottom:12px}
+.goal .gh{display:flex;align-items:flex-start;gap:4px}
+.goal h3{flex:1;font:400 20px/1.25 var(--serif);letter-spacing:.02em;padding-top:2px}
+.goal .gh .ib{margin:-6px -8px 0 0}
+.goal .meta{display:flex;align-items:center;gap:14px;margin:4px 0 12px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.goal .meta span{display:inline-flex;align-items:center;gap:6px}
+.goal .meta .calm{color:var(--calm)}
+.goal .ft{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:13px;color:var(--muted)}
+.goal .ft .act{color:var(--gold);display:inline-flex;gap:6px;align-items:center}
+.fab{position:absolute;left:18px;right:18px;bottom:90px;z-index:4}
+
+/* ===== Линия: главы — секции, задания — строки, этапы — с нитью ===== */
+.gp{padding:14px 16px 12px;margin-top:4px}
+.gp .big{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.gp .big b{font:400 40px/1 var(--serif);color:var(--gold-hi);letter-spacing:.02em}
+.light .gp .big b{color:var(--gold)}
+.gp .big span{font-size:13px;color:var(--muted)}
+.chp{margin-top:12px;padding:0 14px 6px}
+.chh{display:flex;align-items:center;gap:10px;min-height:56px}
+.chh h3{flex:1;font:400 19px/1.2 var(--serif);letter-spacing:.05em}
+.chh .cnt{font-size:13px;color:var(--muted)}
+.chp>.bar{height:3px;margin:0 0 4px}
+.chp.is-done{padding-bottom:0}
+.tsk{display:flex;align-items:center;gap:10px;min-height:56px;border-top:1px solid var(--line)}
+.tsk .t{flex:1;min-width:0;font:500 16px/1.3 var(--sans)}
+.tsk .t small{display:flex;align-items:center;gap:5px;font:400 12px var(--sans);color:var(--gold);margin-top:2px}
+.tsk.act{background:linear-gradient(90deg,var(--halo),transparent 85%);margin:0 -14px;padding:0 14px;border-left:2px solid var(--gold)}
+.sub-st{margin:0 0 4px 20px;padding-left:6px;border-left:1px dashed var(--line-hi)}
+.sub-st .row{min-height:46px}
+.fold{display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;color:var(--muted);background:none;border:0;cursor:pointer;width:100%;text-align:left}
+.add{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--gold);font-size:14px;border:1px dashed var(--line-hi);padding:0 12px;margin:4px 0;background:none;width:100%;cursor:pointer;font-family:var(--sans);border-radius:2px}
+.add.ph{color:var(--text);border-style:solid;border-color:var(--gold);background:var(--s3)}
+.add .caret{width:1px;height:18px;background:var(--gold-hi);animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.add small{margin-left:auto;color:var(--muted)}
+
+/* ===== Листы, диалоги ===== */
+.scrim{position:absolute;inset:0;background:rgba(5,4,3,.66);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:6;background:var(--s2);border-top:1px solid var(--gold-lo);border-radius:16px 16px 0 0;padding:10px 20px 24px;box-shadow:0 -20px 50px #000a}
+.sheet .grab{width:42px;height:4px;background:var(--line-hi);margin:0 auto 14px;border-radius:9px}
+.sheet h2{font:400 26px/1.2 var(--serif);letter-spacing:.02em;margin:4px 0}
+.fld{display:block;margin:14px 0 4px;font-size:13px;color:var(--muted)}
+.inp{width:100%;min-height:48px;padding:10px 12px;background:var(--s3);border:1px solid var(--line-hi);color:var(--text);font:500 17px var(--sans);border-radius:2px}
+.inp:focus{border-color:var(--gold);outline:0;box-shadow:0 0 0 3px var(--halo)}
+textarea.inp{min-height:130px;font:400 15px/1.55 var(--sans);resize:none}
+.gap{display:grid;gap:10px;margin-top:18px}
+.dialog{padding:22px 20px 18px;max-width:350px;box-shadow:0 20px 60px #000a}
+.dialog h4{font:400 22px/1.2 var(--serif);letter-spacing:.03em;margin-bottom:6px}
+.dialog .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+.prev{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:var(--gold)}
+
+/* ===== Тосты, баннеры, скелетоны ===== */
+.toast{display:flex;align-items:center;gap:12px;padding:4px 6px 4px 16px;min-height:52px;background:var(--s3);border:1px solid var(--line-hi);border-left:3px solid var(--gold);border-radius:3px;box-shadow:0 10px 30px #0008;font-size:15px}
+.toast .t{flex:1}
+.toast.err{border-left-color:var(--calm)}
+.banner{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 16px;background:var(--s3);border-bottom:1px solid var(--calm);font-size:14px;color:var(--text)}
+.sk{background:linear-gradient(90deg,var(--s2),var(--s3),var(--s2));background-size:200% 100%;animation:sh 1.6s linear infinite;border-radius:2px}
+@keyframes sh{to{background-position:-200% 0}}
+
+/* ===== Вход ===== */
+.crest{width:86px;height:86px;margin:18px auto 6px;color:var(--gold);filter:drop-shadow(0 0 18px var(--glow))}
+.brand{font:400 34px/1 var(--serif);letter-spacing:.34em;text-align:center;color:var(--gold-hi);padding-left:.34em}
+.tag-l{text-align:center;color:var(--muted);max-width:30ch;margin:12px auto 0;font-size:16px;line-height:1.5}
+.bot{position:absolute;left:20px;right:20px;bottom:30px;z-index:3}
+.bot p{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+.gg{width:22px;height:22px;border-radius:50%;background:#fff;color:#3c4043;display:grid;place-items:center;font:700 13px var(--sans)}
+
+/* ===== Завершение ===== */
+.fin{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 28px;
+  background:radial-gradient(70% 45% at 50% 46%,rgba(244,215,140,.22),transparent 70%),radial-gradient(120% 90% at 50% 50%,transparent 40%,rgba(0,0,0,.85))}
+.fin .rays{position:absolute;left:50%;top:46%;width:680px;height:680px;margin:-340px 0 0 -340px;background:repeating-conic-gradient(from 0deg,rgba(244,215,140,.10) 0 4deg,transparent 4deg 18deg);-webkit-mask-image:radial-gradient(circle,#000,transparent 62%);mask-image:radial-gradient(circle,#000,transparent 62%);z-index:-1}
+.fin .flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 46%,#fff7dc,rgba(244,215,140,.7) 22%,transparent 62%);opacity:0;pointer-events:none}
+.fin .kicker{font:400 14px var(--serif);letter-spacing:.5em;color:var(--gold);padding-left:.5em}
+.fin h1{font:400 38px/1.15 var(--serif);letter-spacing:.38em;text-transform:uppercase;color:var(--gold-hi);padding-left:.38em;text-shadow:0 0 28px var(--glow);margin:14px 0 0}
+.fin h2{font:400 30px/1.2 var(--serif);letter-spacing:.06em;margin-top:6px}
+.fin .stats{display:flex;gap:34px;margin-top:6px}
+.fin .stats div{font-size:13px;color:var(--muted)}
+.fin .stats b{display:block;font:400 34px/1.1 var(--serif);color:var(--text);letter-spacing:.03em}
+.fin .go{position:absolute;left:24px;right:24px;bottom:34px}
+.fin .hr{width:100%;max-width:300px}
+.play .flash{animation:flash 1.3s ease-out both}
+.play h1{animation:ban 1.8s cubic-bezier(.2,.7,.2,1) both}
+.play .rays{animation:spin 90s linear infinite}
+.play .fade{animation:rise .9s .9s ease-out both}
+@keyframes flash{0%{opacity:0}12%{opacity:.9}100%{opacity:0}}
+@keyframes ban{0%{opacity:0;letter-spacing:.8em}100%{opacity:1;letter-spacing:.38em}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes rise{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:none}}
+
+/* ===== Десктоп ===== */
+.deskwrap{zoom:.72;margin-bottom:28px}
+.desk{width:1280px;height:800px;position:relative;overflow:hidden;background:var(--bg);color:var(--text);font:400 15px/1.45 var(--sans);display:grid;grid-template-columns:380px 1fr;box-shadow:0 0 0 1px #2c2418,0 30px 70px #000a;isolation:isolate}
+.desk.p3{grid-template-columns:380px 1fr 360px}
+.dcol{position:relative;z-index:1;overflow:hidden;padding:22px 24px}
+.dcol.l{border-right:1px solid var(--line);background:linear-gradient(90deg,#00000030,transparent)}
+.dcol.r{border-left:1px solid var(--line);background:var(--s1)}
+.dbrand{display:flex;align-items:center;gap:12px;margin-bottom:14px;font:400 18px var(--serif);letter-spacing:.3em;color:var(--gold-hi)}
+.light .dbrand{color:var(--gold)}
+.dbrand .ic{width:30px;height:30px;color:var(--gold)}
+.dtop{display:flex;align-items:center;gap:8px;min-height:44px;margin-bottom:10px}
+.dtop h1{flex:1;font:400 22px var(--serif);letter-spacing:.26em;text-transform:uppercase;color:var(--gold-hi)}
+.light .dtop h1{color:var(--gold)}
+.crumb{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.crumb a{color:var(--muted);text-decoration:none}.crumb b{color:var(--text);font-weight:500}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dgrid .goal{margin:0}
+.newgoal{display:grid;place-items:center;border:1px dashed var(--line-hi);min-height:150px;color:var(--gold);font-size:15px;gap:6px;text-align:center;background:none}
+.medal{width:132px;height:132px;margin:6px auto 14px;position:relative;display:grid;place-items:center;color:var(--gold);
+  background:radial-gradient(circle,var(--s3) 0 52%,transparent 53%),conic-gradient(var(--gold-lo) 0 2deg,transparent 2deg 15deg) ;border-radius:50%;filter:drop-shadow(0 0 16px var(--glow))}
+.medal::before{content:"";position:absolute;inset:14px;border-radius:50%;border:1px solid var(--gold-lo)}
+.medal .ic{width:52px;height:52px;stroke-width:1.2}
+.dcol.r h2{font:400 26px/1.2 var(--serif);letter-spacing:.03em;text-align:center}
+.dcol.r .path{justify-content:center;margin-top:4px}
+.kv{display:flex;justify-content:space-between;min-height:44px;align-items:center;border-bottom:1px solid var(--line);font-size:14px}
+.kv span{color:var(--muted)}
+
+/* ===== Лист компонентов ===== */
+.sheetwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:22px}
+.cell{padding:22px;background:var(--bg);color:var(--text);border:1px solid #2c2418;position:relative;isolation:isolate;overflow:hidden;font:400 15px/1.45 var(--sans)}
+.cell.wide{grid-column:1/-1}
+.cell>h5{font:400 14px var(--sans);color:var(--muted);margin-bottom:14px;font-weight:500}
+.cell.light{border-color:#b59c68}
+.stk{display:grid;gap:14px}
+.chkgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;font-size:13px;color:var(--muted)}
+.chkgrid>div{display:grid;justify-items:center;gap:2px;padding:6px 0}
+.chkgrid b{display:block;color:var(--text);font-weight:500}
+.mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.mini .panel{padding:16px}
+.mini h4{font:400 19px/1.25 var(--serif);letter-spacing:.03em;margin-bottom:4px}
+.mini p{font-size:14px;color:var(--muted);margin-bottom:10px}
+.mini .prop{display:flex;align-items:center;gap:6px;border-top:1px solid var(--line);min-height:44px;font-size:14px}
+.mini .prop .t{flex:1}
+.tog{width:48px;height:28px;border-radius:99px;border:1px solid var(--line-hi);background:var(--s3);position:relative;flex:none}
+.tog::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--muted)}
+.fcell{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+.fcell .phone{zoom:.52}
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px}
+.notes div{padding:22px;border:1px solid #2c2418;background:#100d0a}
+.notes h3{font:400 20px/1.3 var(--serif);letter-spacing:.06em;color:#ece1ca;margin:0 0 12px}
+.notes li{margin:0 0 8px 18px;color:#cbbfa8;font-size:15px}
+.replay{margin-top:10px;background:none;border:1px solid #6b5326;color:#dcae52;padding:10px 18px;font:500 14px var(--sans);cursor:pointer;min-height:44px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-line" viewBox="0 0 24 24"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/><circle cx="12" cy="12" r="1.6"/></symbol>
+    <symbol id="i-chapter" viewBox="0 0 24 24"><path d="M5 21V10a7 7 0 0114 0v11M3 21h18M9 21v-6a3 3 0 016 0v6"/></symbol>
+    <symbol id="i-quest" viewBox="0 0 24 24"><path d="M6 3h12v14.5L12 21l-6-3.5zM9.5 8h5M9.5 11.5h5"/></symbol>
+    <symbol id="i-step" viewBox="0 0 24 24"><path d="M12 4.5l7 7.5-7 7.5L5 12z"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4M6 4h11l-2.5 4 2.5 4H6"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></symbol>
+    <symbol id="i-today" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2 2M16.7 16.7l2 2M18.7 5.3l-2 2M7.3 16.7l-2 2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h10a3 3 0 013 3V20H8a3 3 0 01-3-3zM5 17a3 3 0 013-3h10"/></symbol>
+    <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="18.5" r="1.2"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-chevr" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-hour" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="1"/><path d="M4 10h16M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="i-off" viewBox="0 0 24 24"><path d="M5 12a10 10 0 0114 0M8 15a6 6 0 018 0M12 19h.01M3 3l18 18"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2zM12 10v5M12 18h.01"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+    <symbol id="i-sparks" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M18 6l-2.5 2.5M8.5 15.5L6 18"/></symbol>
+  </defs>
+</svg>
+
+<div class="pg">
+  <header>
+    <h1>Life RPG<br>Золото и руны</h1>
+    <p class="lead">Визуальный язык ежедневника: журнал заданий из большой RPG, который нужно открывать десять раз в день. Три трактовки, одна выбрана и проработана: телефон 390×844, десктоп 1280×800, лист компонентов. Всё нарисовано заново, шрифты — свободные из Google Fonts. Ромбы-чекбоксы и этапы на макетах кликаются.</p>
+  </header>
+
+  <!-- ===================== 1. ТРИ ТРАКТОВКИ ===================== -->
+  <h2>Три трактовки</h2>
+  <p class="sub">Разные по температуре, фактуре и форме прогресса. У всех одна основа: тёмная тема главная, светлая — её дневниковая версия.</p>
+  <div class="dirs">
+    <article class="dir a">
+      <span class="pick">Выбрана</span>
+      <h4>Золото и руны</h4>
+      <p class="who">В духе Elden Ring</p>
+      <p>Обсидиановый фон, тёплое золото как единственный акцент, тонкие золотые нити, виньетка и мягкое сияние. Всё, что сделано или важно, светится; всё остальное — тихий камень.</p>
+      <div class="sw" aria-label="Палитра"><i style="background:#0d0b09"><span>#0D0B09</span></i><i style="background:#1e1812"><span>#1E1812</span></i><i style="background:#dcae52"><span>#DCAE52</span></i><i style="background:#f4d78c"><span>#F4D78C</span></i><i style="background:#ece1ca"><span>#ECE1CA</span></i><i style="background:#e0975c"><span>#E0975C</span></i></div>
+      <div class="typ">Forum + Onest<small>Forum — гравировка по камню в римской манере, для названий и баннеров. Onest — спокойный гротеск для текста.</small></div>
+      <svg class="pf" viewBox="0 0 320 70" aria-label="Форма прогресса: дорога"><path d="M6 36H314" stroke="#3b2f1f" stroke-width="4"/><path d="M6 36H168" stroke="#dcae52" stroke-width="4"/><g stroke="#dcae52" stroke-width="2"><path d="M100 28l8 8-8 8-8-8z" fill="#dcae52"/><path d="M200 28l8 8-8 8-8-8z" fill="#0d0b09" stroke="#8f6e2e"/><path d="M308 28l8 8-8 8-8-8z" fill="#0d0b09" stroke="#8f6e2e"/></g><text x="6" y="62" fill="#a69884" font-size="11" font-family="Onest">Основа</text><text x="110" y="62" fill="#a69884" font-size="11" font-family="Onest">Практика</text><text x="212" y="62" fill="#a69884" font-size="11" font-family="Onest">Разговор</text></svg>
+      <div class="icons" aria-label="Иконки"><svg><use href="#i-line"/></svg><svg><use href="#i-chapter"/></svg><svg><use href="#i-quest"/></svg><svg><use href="#i-step"/></svg></div>
+      <dl><dt>Прогресс</dt><dd>Дорога: главы — вехи-ромбы на золотой нити</dd><dt>Иконки</dt><dd>Гравировка: тонкий контур, острые углы</dd><dt>Движение</dt><dd>Тёплое: вспышка и кольцо света, медленный подъём баннера</dd></dl>
+    </article>
+
+    <article class="dir b">
+      <h4>Лёд и созвездия</h4>
+      <p class="who">В духе Skyrim</p>
+      <p>Холодная ночь, иней и звёзды. Цель — созвездие: этап зажигает звезду, глава замыкает фигуру. Строго и тихо, золото заменено льдом.</p>
+      <div class="sw"><i style="background:#0a1118"><span>#0A1118</span></i><i style="background:#16222e"><span>#16222E</span></i><i style="background:#9fd3ea"><span>#9FD3EA</span></i><i style="background:#e4edf2"><span>#E4EDF2</span></i><i style="background:#8fa5b5"><span>#8FA5B5</span></i><i style="background:#d9a45b"><span>#D9A45B</span></i></div>
+      <div class="typ">Cormorant SC + Source Sans 3<small>Капитель с тонкими засечками как резьба по камню, рядом — нейтральный гротеск.</small></div>
+      <svg class="pf" viewBox="0 0 320 70" aria-label="Форма прогресса: созвездие"><g stroke="#9fd3ea" stroke-width="1.4" fill="none"><path d="M14 52L60 24 110 40 160 14"/><path d="M160 14L214 36 262 18 306 50" stroke-dasharray="3 4" stroke="#25384a"/></g><g fill="#9fd3ea"><circle cx="14" cy="52" r="4"/><circle cx="60" cy="24" r="4"/><circle cx="110" cy="40" r="4"/><circle cx="160" cy="14" r="5.5"/></g><g fill="#0a1118" stroke="#4b6578" stroke-width="1.4"><circle cx="214" cy="36" r="4"/><circle cx="262" cy="18" r="4"/><circle cx="306" cy="50" r="4"/></g></svg>
+      <div class="icons"><svg viewBox="0 0 24 24"><path d="M12 2v20M4 7l16 10M20 7L4 17"/></svg><svg viewBox="0 0 24 24"><path d="M3 20L10 6l4 6 3-4 4 12z"/></svg><svg viewBox="0 0 24 24"><path d="M12 21V4M12 11L6 5M12 11l6-6"/></svg><svg viewBox="0 0 24 24"><path d="M12 7v10M7 12h10"/></svg></div>
+      <dl><dt>Прогресс</dt><dd>Созвездие: этап — звезда, глава — фигура</dd><dt>Иконки</dt><dd>Рунические штрихи, как высеченные во льду</dd><dt>Движение</dt><dd>Холодное: звёзды загораются, медленный дрейф фона</dd></dl>
+    </article>
+
+    <article class="dir c">
+      <h4>Свечи и пергамент</h4>
+      <p class="who">В духе настольной RPG</p>
+      <p>Дневник путешественника при свечах: бумага, чернила, сургуч. Самая тёплая и домашняя трактовка; тёмная версия — тот же дневник ночью, при одной свече.</p>
+      <div class="sw"><i style="background:#e9dcbd"><span>#E9DCBD</span></i><i style="background:#f4ead2"><span>#F4EAD2</span></i><i style="background:#2a1d12"><span>#2A1D12</span></i><i style="background:#8e2b1e"><span>#8E2B1E</span></i><i style="background:#e0a93b"><span>#E0A93B</span></i><i style="background:#5b6b3a"><span>#5B6B3A</span></i></div>
+      <div class="typ">Alegreya + Alegreya Sans<small>Каллиграфическая антиква: рукописный ритм, читается как дневник.</small></div>
+      <svg class="pf" viewBox="0 0 320 70" aria-label="Форма прогресса: свечи"><g fill="#f4ead2" stroke="#2a1d12" stroke-width="1.2"><rect x="30" y="38" width="22" height="26"/><rect x="130" y="24" width="22" height="40"/><rect x="230" y="12" width="22" height="52"/></g><g fill="#e0a93b" stroke="#8e2b1e" stroke-width="1.2"><path d="M41 12c6 7 6 12 0 14-6-2-6-7 0-14z"/><path d="M141 2c6 7 6 12 0 14-6-2-6-7 0-14z"/></g><path d="M241 4v8" stroke="#2a1d12" stroke-width="1.5"/></svg>
+      <div class="icons"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg><svg viewBox="0 0 24 24"><path d="M3 6c3-1 6-1 9 1 3-2 6-2 9-1v13c-3-1-6-1-9 1-3-2-6-2-9-1zM12 7v13"/></svg><svg viewBox="0 0 24 24"><path d="M6 4h11a2 2 0 010 4H8v10a2 2 0 01-4 0V6a2 2 0 012-2z"/></svg><svg viewBox="0 0 24 24"><path d="M10 10h4v10h-4zM12 3c2 2 2 4 0 5-2-1-2-3 0-5z"/></svg></div>
+      <dl><dt>Прогресс</dt><dd>Свечи: высота — прогресс, огонь — закрытая глава</dd><dt>Иконки</dt><dd>Чернильные штампы и сургучные печати</dd><dt>Движение</dt><dd>Бумажное: перо дописывает, печать прижимается</dd></dl>
+    </article>
+  </div>
+
+  <h3 style="margin-top:32px">Почему «Золото и руны»</h3>
+  <p class="sub" style="margin-bottom:0">Золотая нить ложится на структуру продукта: цель — дорога, главы — вехи, этап — ромб, который загорается. Один акцентный цвет легко держит контраст AA и не спорит с текстом. Светлая версия получается сама: то же золото, прожжённое до бронзы на пергаменте.</p>
+
+  <!-- ===================== 2. ТЕЛЕФОН, ТЁМНАЯ ТЕМА ===================== -->
+  <h2>Телефон · тёмная тема</h2>
+  <p class="sub">Экраны 1–5 из брифа плюс лист деталей и диалог быстрого ввода.</p>
+  <div class="rail" id="phones"></div>
+
+  <h2>Телефон · «пергамент»</h2>
+  <p class="sub">Та же идея в светлой теме: «Сегодня» на бумаге дневника путешественника. Рядом — тёмная версия для сравнения.</p>
+  <div class="rail" id="phones-light"></div>
+
+  <!-- ===================== 3. ДЕСКТОП ===================== -->
+  <h2>Десктоп 1280×800</h2>
+  <p class="sub">«Сегодня» — постоянная колонка слева; рядом журнал или линия; детали — панель справа, как описание предмета в инвентаре.</p>
+  <figure><div class="deskwrap" id="desk1"></div><figcaption><b>Сегодня + Журнал.</b> Колонка «Сегодня» всегда на виду, журнал — сеткой карточек.</figcaption></figure>
+  <figure><div class="deskwrap" id="desk2"></div><figcaption><b>Сегодня + Линия + панель деталей.</b> Дерево цели в центре, выбранное задание — «предмет» справа с кнопкой «Сделать активным».</figcaption></figure>
+
+  <!-- ===================== 4. КОМПОНЕНТЫ ===================== -->
+  <h2>Лист компонентов</h2>
+  <p class="sub">Все детали, из которых собраны экраны. Чекбоксы, кольца и дорога живые.</p>
+  <div class="sheetwrap" id="components"></div>
+
+  <!-- ===================== 5. АТМОСФЕРА И СКОРОСТЬ ===================== -->
+  <h2>Где атмосфера, а где тишина</h2>
+  <div class="notes">
+    <div><h3>Усилено</h3><ul>
+      <li><b>Экран завершения</b> — максимум: вспышка, затемнение по краям, лучи, баннер с разрядкой. Занимает один экран и один раз.</li>
+      <li><b>Отметка этапа</b> — единственный «звук» повседневности: ромб заливается золотом, от него расходится кольцо света (0,4–0,7 с). Одно касание, без ожидания.</li>
+      <li><b>Шапка, карточка активного квеста, дорога цели</b> — золотые уголки, нить с вехами, сияние у заполненной части.</li>
+      <li><b>Голос рассказчика</b> — в заголовках, тостах и пустых состояниях: «Квест принят», «Здесь начнётся твоя история».</li>
+    </ul></div>
+    <div><h3>Приглушено намеренно</h3><ul>
+      <li><b>Текст лежит на ровной поверхности.</b> Никаких текстур и рамок под абзацами; виньетка и свет живут по краям и за контентом.</li>
+      <li><b>Три уровня поверхностей</b> различаются тоном и тонкой линией, а не рамками в рамках; уголки только у одной карточки на экране.</li>
+      <li><b>Заглавные с разрядкой</b> только у названий экранов и баннеров; названия заданий и этапов — обычным регистром для скорости чтения.</li>
+      <li><b>Просрочка и пауза без наказания:</b> янтарные песочные часы и холодный штрих вместо красного. Отмена — просто тихий серый ромб с крестиком.</li>
+      <li><b>Статус не только цветом:</b> открыт — пустой ромб, выполнен — золотой с галочкой, пауза — пунктир и две черты, отмена — крест.</li>
+      <li><b>Движение</b> отвечает на касание; при «уменьшенном движении» вспышки, кольца и лучи отключаются, состояние всё равно читается.</li>
+    </ul></div>
+  </div>
+</div>
+
+<script>
+/* ===== Помощники ===== */
+const ic=(n,c='')=>`<svg class="ic ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const D='14,2.5 25.5,14 14,25.5 2.5,14';
+function chkSvg(s){
+  const g=`<defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--gold-hi)"/><stop offset="1" stop-color="var(--gold)"/></linearGradient></defs>`;
+  if(s==='done')return `<svg viewBox="0 0 28 28" aria-hidden="true">${g}<polygon points="${D}" fill="url(#gg)" stroke="var(--gold-hi)" stroke-width="1.5"/><path d="M9 14.4l3.7 3.7 6.5-7.6" fill="none" stroke="var(--on-gold)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg><i class="ring"></i>`;
+  if(s==='pause')return `<svg viewBox="0 0 28 28" aria-hidden="true"><polygon points="${D}" fill="none" stroke="var(--pause)" stroke-width="1.5" stroke-dasharray="3 2.6"/><rect x="10.6" y="10" width="2.6" height="8" fill="var(--pause)"/><rect x="14.8" y="10" width="2.6" height="8" fill="var(--pause)"/></svg>`;
+  if(s==='cancel')return `<svg viewBox="0 0 28 28" aria-hidden="true"><polygon points="${D}" fill="none" stroke="var(--muted)" stroke-width="1.2" opacity=".75"/><path d="M10 10l8 8M18 10l-8 8" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  return `<svg viewBox="0 0 28 28" aria-hidden="true"><polygon points="${D}" fill="var(--s3)" stroke="var(--gold)" stroke-width="1.5"/><polygon points="14,8.4 19.6,14 14,19.6 8.4,14" fill="none" stroke="var(--gold-lo)"/></svg><i class="ring"></i>`;
+}
+const chk=(s='open',label='Отметить этап',big=false)=>`<button class="chk${big?' big':''}" data-s="${s}" role="checkbox" aria-checked="${s==='done'}" aria-label="${label}"${s==='pause'||s==='cancel'?' aria-disabled="true"':''}>${chkSvg(s)}</button>`;
+const ring=(d,t,s=40)=>{const r=14,c=2*Math.PI*r,p=t?d/t:0;return `<span class="ring-p" style="width:${s}px;height:${s}px" role="img" aria-label="${d} из ${t}"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="${r}" fill="none" stroke="var(--line)" stroke-width="3"/><circle cx="18" cy="18" r="${r}" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="${(c*p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 18 18)"/></svg><b>${d}/${t}</b></span>`};
+const bar=(p,cls='')=>`<div class="bar ${cls}" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" style="--p:${p}%"><i></i></div>`;
+const pips=(d,t)=>`<div class="pips" role="img" aria-label="${d} из ${t} этапов">${Array.from({length:t},(_,i)=>`<i class="pip${i<d?' on':''}"></i>`).join('')}</div>`;
+const CH=[{n:'Основа',w:12,p:100},{n:'Практика',w:19,p:42},{n:'Разговор',w:10,p:0}];
+const road=(cs=CH,labels=true)=>`<div class="road" role="img" aria-label="Прогресс по главам">${cs.map(c=>`<div class="rc" style="--w:${c.w};--p:${c.p}%"><div class="tr"><i></i></div><span class="nd${c.p===100?' on':''}"></span>${labels?`<span class="lb">${c.n}</span>`:''}</div>`).join('')}</div>`;
+const row=(t,s='open',extra='')=>`<div class="row${s==='done'?' is-done':''}${s==='cancel'||s==='pause'?' is-off':''}">${chk(s,s==='done'?'Вернуть этап':'Отметить этап')}<span class="t">${t}</span>${extra}</div>`;
+const fl=(a,b,sel)=>`<button class="fl" role="tab" aria-selected="${!!sel}">${a} <b>${b}</b></button>`;
+const filters=(sel=0)=>`<div class="filters" role="tablist" aria-label="Фильтр целей">${[['В работе',3],['На паузе',1],['Завершённые',2],['Отменённые',0]].map((f,i)=>fl(f[0],f[1],i===sel)).join('')}</div>`;
+
+/* ===== Сегодня ===== */
+function todayCol(){return `
+<header class="hello"><h2>Добрый вечер</h2><p>Вторник, 17 ноября</p></header>
+<section class="panel orn quest" aria-label="Активный квест">
+  <p class="path">${ic('line','g')}<span>Заговорить по-английски › Практика</span></p>
+  <p class="qlab">${ic('flag')}Активный квест</p>
+  <h3>Первые живые разговоры</h3>
+  <div class="pw">${pips(3,8)}<span>3 из 8 этапов</span></div>
+  <div class="next">${chk('open','Отметить этап',true)}<div><small>Следующий этап</small><b>Записать голосовое на 2 минуты</b></div></div>
+</section>
+<div class="steps">
+  ${row('Провести разговор на 15 минут')}${row('Выписать десять новых слов')}${row('Назначить вторую встречу')}
+  <button class="more">ещё 1</button>
+</div>
+<section class="gl"><div class="gt"><span>Заговорить по-английски к лету</span></div><div class="pb">${bar(49)}<span class="pct">49%</span></div></section>
+<section class="oth"><h4>Другие цели в работе</h4>
+  <div class="row">${ic('line','g')}<span class="t">Полумарафон к маю</span>${bar(34)}<span class="pct" style="font-size:15px">34%</span></div>
+  <div class="row">${ic('line','g')}<span class="t">Собрать первый сайт</span>${bar(12)}<span class="pct" style="font-size:15px">12%</span></div>
+</section>`}
+
+/* ===== Журнал ===== */
+function goal({t,due,over,p,ch,act,paused,menu=true}){return `
+<article class="panel goal">
+  <div class="gh"><h3>${t}</h3>${menu?`<button class="ib" aria-label="Меню цели">${ic('dots')}</button>`:''}</div>
+  <div class="meta">${paused?`<span class="pill pause">${ic('pause')}На паузе</span>`:''}${due?`<span class="${over?'calm':''}">${ic(over?'hour':'cal')}${due}</span>`:''}</div>
+  <div class="pb">${bar(p,paused?'paused':'')}<span class="pct">${p}%</span></div>
+  <div class="ft"><span>${ch}</span>${act?`<span class="act">${ic('flag')}${act}</span>`:''}</div>
+</article>`}
+const GOALS=[
+ {t:'Заговорить по-английски к лету',due:'до 1 июня',p:49,ch:'Глава 2 из 3',act:'Активный квест'},
+ {t:'Полумарафон к маю',due:'до 1 мая',p:34,ch:'Глава 2 из 4'},
+ {t:'Собрать первый сайт',due:'Срок прошёл 16 дней назад',over:true,p:12,ch:'Глава 1 из 3'}];
+const journalList=()=>GOALS.map(goal).join('');
+
+/* ===== Линия ===== */
+const STEPS=['Записать голосовое на 2 минуты','Провести разговор на 15 минут','Выписать десять новых слов','Назначить вторую встречу','Разобрать ошибки с репетитором'];
+function lineTree({steps=3,full=false,selected=false}={}){return `
+<section class="panel gp orn">
+  <div class="big"><b>49%</b><span>до 1 июня</span></div>
+  ${road()}
+</section>
+<section class="panel chp is-done"><div class="chh">${ic('chapter','g')}<h3>Основа</h3><span class="cnt">12 / 12</span>${chk('done','Глава пройдена')}</div></section>
+<section class="panel chp">
+  <div class="chh">${ic('chapter','g')}<h3>Практика</h3><span class="cnt">8 / 19</span>${ic('chev','m')}</div>
+  ${bar(42)}
+  <div class="tsk act">${ring(3,8)}<div class="t">Первые живые разговоры<small>${ic('flag')}Активный квест</small></div>${ic('chev','m')}</div>
+  <div class="sub-st">
+    ${STEPS.slice(0,steps).map(s=>row(s)).join('')}
+    <button class="fold">${ic('chevr','m')}Выполнено: 3</button>
+    <button class="add">${ic('plus')}Добавить этап</button>
+  </div>
+  <div class="tsk${selected?' act':''}">${ring(0,6)}<div class="t">Слова для разговора</div>${ic('chevr','m')}</div>
+  <div class="tsk" style="opacity:1">${chk('pause','Задание на паузе')}<div class="t" style="color:var(--muted)">Правила вежливости<small style="color:var(--pause)">${ic('pause')}На паузе</small></div></div>
+  <button class="fold" style="border-top:1px solid var(--line)">${ic('chevr','m')}Выполнено: 1</button>
+  <button class="add">${ic('plus')}Добавить задание</button>
+</section>
+<section class="panel chp"><div class="chh">${ic('chapter','g')}<h3>Разговор</h3><span class="cnt">0 / 10</span>${ic('chevr','m')}</div></section>
+<button class="add" style="margin-top:12px">${ic('plus')}Добавить главу</button>`}
+
+/* ===== Окружение экранов ===== */
+const sb=()=>`<div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>`;
+const nav=(a)=>`<nav class="nav" aria-label="Основная навигация"><a href="#" ${a==='t'?'aria-current="page"':''}>${ic('today')}Сегодня</a><a href="#" ${a==='j'?'aria-current="page"':''}>${ic('book')}Журнал</a></nav>`;
+const phone=(inner,cls='')=>`<div class="phone ${cls}">${sb()}${inner}</div>`;
+const fig=(p,cap)=>`<figure>${p}<figcaption>${cap}</figcaption></figure>`;
+
+const crest=`<svg class="crest" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="32" cy="32" r="29"/><circle cx="32" cy="32" r="24" stroke-dasharray="1.5 3.5"/><path d="M32 7l5.5 19.5L57 32l-19.5 5.5L32 57l-5.5-19.5L7 32l19.5-5.5z" fill="var(--s1)"/><circle cx="32" cy="32" r="3.5" fill="currentColor"/></svg>`;
+
+const SCREENS={
+login:()=>phone(`<div class="scr full">${crest}
+  <div class="brand">LIFE RPG</div>
+  <p class="tag-l">Большая цель — это история. Разбей её на главы, задания и этапы и проходи по одному.</p>
+  <div class="hr"><i></i></div>
+  <section class="panel" style="padding:12px 14px 10px" aria-label="Пример цели">
+    <b style="font:400 17px var(--serif);letter-spacing:.03em">Заговорить по-английски к лету</b>
+    <div style="margin-top:8px">${road()}</div>
+    <div class="tsk" style="min-height:50px;border-top:1px solid var(--line);margin-top:2px">${ring(3,8,36)}<div class="t" style="font-size:15px">Первые живые разговоры</div></div>
+    <div class="sub-st" style="margin:0">${row('Записать голосовое на 2 минуты')}${row('Назначить первую встречу','done')}</div>
+  </section></div>
+  <div class="bot"><button class="btn"><span class="gg">G</span>Войти через Google</button><p>Вход нужен, чтобы цели сохранялись на всех устройствах.</p></div>`),
+today:(cls='')=>phone(`<div class="scr">${todayCol()}</div>${nav('t')}`,cls),
+journal:()=>phone(`<div class="scr"><div class="top"><h1>Журнал</h1><button class="ib" aria-label="Настройки">${ic('gear')}</button></div>${filters(0)}${journalList()}</div><div class="fab"><button class="btn">${ic('plus')}Новая цель</button></div>${nav('j')}`),
+line:()=>phone(`<div class="scr full"><div class="top"><button class="ib" aria-label="Назад">${ic('back')}</button><h1 class="t2">Заговорить по-английски к лету</h1><button class="ib" aria-label="Меню">${ic('dots')}</button></div>${lineTree({steps:3})}</div>`),
+detail:()=>phone(`<div class="scr full" style="opacity:.55"><div class="top"><button class="ib">${ic('back')}</button><h1 class="t2">Заговорить по-английски к лету</h1></div>${lineTree({steps:2})}</div><div class="scrim"></div>
+  <div class="sheet" role="dialog" aria-label="Детали задания"><div class="grab"></div>
+  <p class="path">${ic('chapter','g')}Практика</p>
+  <h2>Слова для разговора</h2>
+  <label class="fld" for="n1">Название</label><input id="n1" class="inp" value="Слова для разговора">
+  <div style="margin:14px 0 0">${pips(0,6)}<p style="font-size:13px;color:var(--muted);margin-top:6px">0 из 6 этапов</p></div>
+  <div class="gap"><button class="btn">${ic('flag')}Сделать активным</button><button class="btn ghost">Поставить на паузу</button><button class="lnk mute" style="color:var(--calm)">Удалить задание</button></div></div>`),
+quick:()=>phone(`<div class="scr full" style="opacity:.5"><div class="top"><button class="ib">${ic('back')}</button><h1 class="t2">Заговорить по-английски к лету</h1></div>${lineTree({steps:2})}</div><div class="scrim"></div>
+  <div class="sheet" role="dialog" aria-label="Быстрый ввод"><div class="grab"></div>
+  <h2>Быстрый ввод</h2><p style="color:var(--muted);font-size:14px">Каждая строка — задание, строки с отступом — его этапы.</p>
+  <label class="fld" for="q1">Список</label>
+  <textarea id="q1" class="inp" readonly>Слова для разговора
+  Выписать десять слов
+  Повторить их вслух
+Подкаст на каждый день</textarea>
+  <p class="prev">${ic('sparks')}Будет создано: 2 задания и 2 этапа</p>
+  <div class="gap"><button class="btn">Создать</button><button class="btn ghost">Отмена</button></div></div>`),
+finish:()=>`<figure><div class="phone play" id="finph">${sb()}<div class="fin"><div class="rays"></div><div class="flash"></div>
+  <p class="kicker fade">LIFE RPG</p><h1>Глава пройдена</h1>
+  <div class="hr fade" style="margin:18px 0"><i></i></div>
+  <h2 class="fade">Практика</h2>
+  <p class="fade" style="color:var(--muted);margin-top:4px">Заговорить по-английски к лету</p>
+  <div class="stats fade" style="margin-top:34px"><div><b>42 дня</b>от начала до финала</div><div><b>7</b>заданий выполнено</div></div>
+  <div class="go fade"><button class="btn">Дальше</button></div></div></div>
+  <figcaption><b>5. Завершение.</b> Вспышка, баннер с раскрывающейся разрядкой, лучи, затемнение по краям. <button class="replay" onclick="replay()">Показать ещё раз</button></figcaption></figure>`
+};
+function replay(){const p=document.getElementById('finph');p.classList.remove('play');void p.offsetWidth;p.classList.add('play')}
+
+document.getElementById('phones').innerHTML=
+  fig(SCREENS.login(),'<b>1. Вход.</b> Суть одной фразой, пример цели — упрощённая копия экрана линии, кнопка внизу.')+
+  fig(SCREENS.today(),'<b>2. Сегодня.</b> Карточка активного квеста с золотыми уголками; следующий этап — крупно, под большим пальцем.')+
+  fig(SCREENS.journal(),'<b>3. Журнал.</b> Фильтры со счётчиками, просрочка — янтарные песочные часы, «Новая цель» в нижней трети.')+
+  fig(SCREENS.line(),'<b>4. Сюжетная линия.</b> Дорога цели по главам, главы — секции, этапы на золотой нити, добавление на месте.')+
+  fig(SCREENS.detail(),'<b>4а. Лист деталей.</b> Правка названия на месте, «Сделать активным» — главная кнопка.')+
+  fig(SCREENS.quick(),'<b>4б. Быстрый ввод.</b> Предпросмотр: «Будет создано: …».')+
+  SCREENS.finish();
+
+document.getElementById('phones-light').innerHTML=
+  fig(SCREENS.today('light'),'<b>Сегодня · пергамент.</b> Золото потемнело до бронзы, фон — тёплая бумага, виньетка — выцветшие края листа.')+
+  fig(SCREENS.today(),'<b>Сегодня · обсидиан.</b> Для сравнения.')+
+  fig(SCREENS.journal().replace('class="phone "','class="phone light"'),'<b>Журнал · пергамент.</b>');
+
+/* ===== Десктоп ===== */
+const dLeft=()=>`<div class="dcol l"><div class="dbrand">${ic('line')}LIFE RPG</div>${todayCol()}</div>`;
+document.getElementById('desk1').innerHTML=`<div class="desk">${dLeft()}
+ <div class="dcol"><div class="dtop"><h1>Журнал</h1><button class="btn sm" style="width:auto">${ic('plus')}Новая цель</button><button class="ib" aria-label="Настройки">${ic('gear')}</button></div>
+ ${filters(0)}<div class="dgrid">${journalList()}<button class="newgoal">${ic('plus','g')}Новая цель<small style="color:var(--muted)">Здесь начнётся ещё одна история</small></button></div></div></div>`;
+document.getElementById('desk2').innerHTML=`<div class="desk p3">${dLeft()}
+ <div class="dcol"><div class="dtop"><div class="crumb"><a href="#">Журнал</a>${ic('chevr','m')}<b>Заговорить по-английски к лету</b></div><span style="flex:1"></span><button class="ib">${ic('dots')}</button></div>
+ ${lineTree({steps:5,selected:true})}</div>
+ <aside class="dcol r" aria-label="Детали задания"><div class="medal">${ic('quest')}</div>
+  <p class="path">${ic('chapter','g')}Практика</p><h2 style="margin-top:6px">Слова для разговора</h2>
+  <div style="margin:18px 0 6px;text-align:center">${pips(0,6)}</div>
+  <div class="kv"><span>Этапы</span>0 из 6</div><div class="kv"><span>Статус</span><span class="pill">${ic('step')}В работе</span></div><div class="kv" style="border:0"><span>Глава</span>Практика</div>
+  <div class="gap"><button class="btn">${ic('flag')}Сделать активным</button><button class="btn ghost">Переименовать</button><button class="lnk mute" style="color:var(--calm)">Удалить задание</button></div></aside></div>`;
+
+/* ===== Компоненты ===== */
+const states=[['open','Открыт'],['done','Выполнен'],['pause','Пауза'],['cancel','Отмена']];
+document.getElementById('components').innerHTML=`
+<section class="cell"><h5>Чекбокс: зона касания 44 px, ромб 28 px</h5>
+  <div class="chkgrid">${states.map(s=>`<div>${chk(s[0],s[1])}<b>${s[1]}</b></div>`).join('')}</div>
+  <p style="font-size:13px;color:var(--muted);margin-top:10px">Отличаются формой и значком: пустой ромб, золотой с галочкой, пунктир с двумя чертами, крест. Нажми на открытый.</p></section>
+<section class="cell"><h5>Индикаторы прогресса</h5><div class="stk">
+  <div class="pb">${bar(34)}<span class="pct">34%</span></div>
+  <div class="pb">${bar(60,'paused')}<span class="pct" style="color:var(--pause)">60%</span></div>
+  ${pips(3,8)}
+  <div style="display:flex;gap:14px">${ring(3,8)}${ring(8,8)}${ring(0,6)}</div></div></section>
+<section class="cell wide"><h5>Дорога: сегментированный прогресс цели по главам</h5>
+  <div class="gp panel orn" style="margin:0"><div class="big"><b>49%</b><span>до 1 июня</span></div>${road()}</div></section>
+<section class="cell"><h5>Карточка активного квеста</h5><div class="quest panel orn" style="margin:0">
+  <p class="path">${ic('line','g')}<span>Полумарафон к маю › Темп</span></p><p class="qlab">${ic('flag')}Активный квест</p><h3>Три пробежки по 5 км</h3>
+  <div class="pw">${pips(1,3)}<span>1 из 3 этапов</span></div>
+  <div class="next">${chk('open','Отметить этап',true)}<div><small>Следующий этап</small><b>Пробежка во вторник</b></div></div></div></section>
+<section class="cell"><h5>Карточки целей: обычная, просроченная, на паузе</h5><div class="stk">
+  ${goal({t:'Полумарафон к маю',due:'до 1 мая',p:34,ch:'Глава 2 из 4',menu:false})}
+  ${goal({t:'Собрать первый сайт',due:'Срок прошёл 16 дней назад',over:true,p:12,ch:'Глава 1 из 3',menu:false})}
+  ${goal({t:'Гитара: первые аккорды',p:60,ch:'Глава 3 из 5',paused:true,menu:false})}</div></section>
+<section class="cell"><h5>Строка дерева: глава, задание, этап</h5>
+  <div class="panel chp" style="margin:0"><div class="chh">${ic('chapter','g')}<h3>Практика</h3><span class="cnt">8 / 19</span>${ic('chev','m')}</div>${bar(42)}
+   <div class="tsk act">${ring(3,8)}<div class="t">Первые живые разговоры<small>${ic('flag')}Активный квест</small></div>${ic('chev','m')}</div>
+   <div class="sub-st">${row('Записать голосовое')}${row('Назначить встречу','done')}</div>
+   <div class="tsk">${ring(0,6)}<div class="t">Слова для разговора</div>${ic('chevr','m')}</div></div></section>
+<section class="cell"><h5>Строка добавления: покой и ввод на месте</h5><div class="stk">
+  <button class="add">${ic('plus')}Добавить этап</button>
+  <div class="add ph"><span>Купить кроссовки</span><span class="caret"></span><small>Enter</small></div></div></section>
+<section class="cell"><h5>Фильтры</h5>${filters(1).replace('class="filters"','class="filters" style="flex-wrap:wrap;-webkit-mask-image:none;mask-image:none"')}</section>
+<section class="cell"><h5>Тосты, баннер сети, ошибка</h5><div class="stk">
+  <div class="toast">${ic('sparks','g')}<span class="t">Квест принят</span><button class="lnk">Вернуть</button></div>
+  <div class="toast">${ic('step','g')}<span class="t">Этап пройден</span><button class="lnk">Вернуть</button></div>
+  <div class="toast err">${ic('warn')}<span class="t">Не удалось сохранить</span><button class="lnk">Повторить</button></div>
+  <div class="banner">${ic('off')}Нет сети. Подключитесь, чтобы сохранять изменения.</div></div></section>
+<section class="cell"><h5>Диалог безвозвратного удаления</h5>
+  <div class="panel dialog"><h4>Удалить главу?</h4><p style="font-size:15px;color:var(--muted)">Глава «Практика» и 12 элементов исчезнут. Это нельзя отменить.</p>
+  <div class="two"><button class="btn ghost">Отмена</button><button class="btn danger">${ic('trash')}Удалить</button></div></div></section>
+<section class="cell"><h5>Скелетон загрузки</h5><div class="stk"><div class="sk" style="height:34px;width:60%"></div><div class="sk" style="height:150px"></div><div class="sk" style="height:48px"></div><div class="sk" style="height:48px"></div></div></section>
+<section class="cell wide"><h5>Состояния экрана «Сегодня»</h5><div class="mini">
+  <div class="panel"><h4>Здесь начнётся твоя история</h4><p>Целей пока нет. Назови первую, остальное разложим на главы и этапы.</p><button class="btn sm">Создать первую цель</button></div>
+  <div class="panel"><h4>Выбери следующий квест</h4><div class="prop">${ic('quest','g')}<span class="t">Слова для разговора</span>${ic('chevr','m')}</div><div class="prop">${ic('quest','g')}<span class="t">Правила вежливости</span>${ic('chevr','m')}</div><div class="prop">${ic('quest','g')}<span class="t">Подкаст на каждый день</span>${ic('chevr','m')}</div></div>
+  <div class="panel"><h4>Квест без этапов</h4><p>Разбей на этапы позже или закрой целиком.</p><div class="prop" style="padding-right:8px">${chk('open','Отметить квест',false)}<span class="t">Квест выполнен</span></div></div>
+  <div class="panel orn"><h4>Квест пройден</h4><p>Следующий квест: «Слова для разговора»</p><div style="display:flex;gap:8px"><button class="btn sm" style="flex:1">Взять</button><button class="btn sm ghost" style="flex:1">Выбрать другой</button></div></div>
+  <div class="panel"><h4>Все цели отдыхают</h4><p>Каждая на паузе. Вернёшься, когда будет время.</p><button class="btn sm ghost">Открыть журнал</button></div>
+  <div class="panel"><h4>Нет целей в работе</h4><p>Начни новую или верни завершённую.</p><button class="btn sm">Новая цель</button></div>
+  <div class="panel"><h4>Все задания выполнены</h4><p>Добавь новые в журнале, и история пойдёт дальше.</p><button class="btn sm ghost">Открыть линию</button></div></div></section>
+<section class="cell wide"><h5>Настройки</h5><div class="mini"><div class="panel" style="padding:4px 16px">
+  <div class="prop" style="border:0"><span class="t">Вибрация при отметке<br><small style="color:var(--muted)">Выключена</small></span><span class="tog" role="switch" aria-checked="false"></span></div>
+  <div class="prop"><span class="t">Звук при отметке<br><small style="color:var(--muted)">Выключен</small></span><span class="tog" role="switch" aria-checked="false"></span></div>
+  <div class="prop"><button class="lnk" style="padding:0">Выйти</button></div></div></div></section>
+<section class="cell wide"><h5>Оверлей завершения (уменьшен)</h5><div class="fcell">
+  <div class="phone play" style="zoom:.55">${sb()}<div class="fin"><div class="rays"></div><div class="flash"></div><p class="kicker">LIFE RPG</p><h1 style="font-size:32px">Цель достигнута</h1><div class="hr" style="margin:18px 0"><i></i></div><h2>Заговорить по-английски к лету</h2><div class="stats" style="margin-top:34px"><div><b>118 дней</b>от начала до финала</div><div><b>21</b>задание выполнено</div></div><div class="go"><button class="btn">Дальше</button></div></div></div>
+  <div class="phone light play" style="zoom:.55">${sb()}<div class="fin"><div class="rays"></div><div class="flash"></div><p class="kicker">LIFE RPG</p><h1 style="font-size:38px">Глава пройдена</h1><div class="hr" style="margin:18px 0"><i></i></div><h2>Основа</h2><div class="stats" style="margin-top:34px"><div><b>19 дней</b>от начала до финала</div><div><b>4</b>задания выполнено</div></div><div class="go"><button class="btn">Дальше</button></div></div></div>
+</div></section>`;
+
+/* ===== Отметка этапа: одно касание, мгновенный отклик ===== */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('.chk[data-s=open],.chk[data-s=done]');if(!b)return;
+  const to=b.dataset.s==='open'?'done':'open';
+  b.dataset.s=to;b.setAttribute('aria-checked',to==='done');b.innerHTML=chkSvg(to);
+  b.parentElement.classList.toggle('is-done',to==='done' && b.parentElement.classList.contains('row'));
+  if(to==='done'){b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop')}
+});
+</script>
+</body>
+</html>

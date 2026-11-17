@@ -9,8 +9,8 @@
     "icons": "pnpm dlx @vite-pwa/assets-generator@2.0.0 --config pwa-assets.config.js"
   },
   "dependencies": {
-    "@fontsource-variable/golos-text": "5.3.0",
-    "@fontsource/philosopher": "5.3.0",
+    "@fontsource-variable/onest": "5.3.1",
+    "@fontsource/forum": "5.3.0",
     "@life-rpg/domain": "workspace:*",
     "@life-rpg/shared": "workspace:*",
     "@tanstack/react-query": "5.104.5",

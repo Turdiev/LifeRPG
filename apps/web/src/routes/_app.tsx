@@ -4,6 +4,7 @@ import { TodayPage } from '@/features/today/TodayPage';
 import { sessionQuery } from '@/shared/api/auth';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
 import { ru } from '@/shared/strings/ru';
+import { LineIcon } from '@/shared/ui/icons';
 import { TabBar } from '@/shared/ui/TabBar';
 import { Toaster } from '@/shared/ui/sonner';
 
@@ -39,8 +40,12 @@ function AppLayout() {
           <aside
             aria-label={ru.tabs.today}
             // На 1024–1279 px уже: с открытой панелью деталей колонке линии остаётся 384 px — как телефон.
-            className="sticky top-0 h-dvh w-80 shrink-0 overflow-y-auto border-r px-4 pt-6 pb-8 xl:w-96"
+            className="sticky top-0 h-dvh w-80 shrink-0 overflow-y-auto border-r bg-linear-to-r from-black/20 to-transparent px-5 pt-5 pb-8 xl:w-96 xl:px-6"
           >
+            <p className="mb-4 flex items-center gap-3 font-heading text-lg tracking-[0.3em] text-gold-text">
+              <LineIcon className="size-7.5 text-gold" />
+              {ru.common.brand}
+            </p>
             <TodayPage />
           </aside>
         )}
@@ -60,7 +65,14 @@ function AppLayout() {
         duration={5000}
         visibleToasts={1}
         containerAriaLabel={ru.toasts.region}
-        toastOptions={{ classNames: { actionButton: '!h-11 !px-3 !text-sm' } }}
+        // Тост — тихая плашка с золотой кромкой слева; ошибка — янтарной (макет docs/design/rpg-mockups.html).
+        toastOptions={{
+          classNames: {
+            toast: '!border-l-3 !border-l-gold !shadow-[0_10px_30px_#0008] !text-[0.9375rem]',
+            error: '!border-l-overdue',
+            actionButton: '!h-11 !px-3 !text-sm !bg-transparent !text-gold !font-medium',
+          },
+        }}
       />
     </CompletionProvider>
   );

@@ -1,8 +1,8 @@
 import type { DraftKind } from '@life-rpg/domain';
-import { Plus } from 'lucide-react';
 import { useState, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
+import { PlusIcon } from '@/shared/ui/icons';
 import { Input } from '@/shared/ui/input';
 import { useLineActions } from './line-actions';
 
@@ -56,18 +56,18 @@ export function InlineAdd({ parentId, kind, className }: InlineAddProps) {
         autoFocus={refocus}
         onClick={() => setOpen(true)}
         className={cn(
-          'flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+          'my-1 flex min-h-11 w-full items-center gap-2 rounded-[2px] border border-dashed border-border-strong px-3 text-left text-sm text-gold-text outline-none hover:bg-surface-3/50 focus-visible:outline-2 focus-visible:outline-ring',
           className,
         )}
       >
-        <Plus className="size-4" aria-hidden />
+        <PlusIcon className="size-4.5" />
         {ru.line.add[kind]}
       </button>
     );
   }
 
   return (
-    <div className={cn('px-1 py-1', className)}>
+    <div className={cn('my-1', className)}>
       <Input
         autoFocus
         value={value}
@@ -82,7 +82,7 @@ export function InlineAdd({ parentId, kind, className }: InlineAddProps) {
           const toDialog = event.relatedTarget instanceof Element && event.relatedTarget.closest('[role="dialog"]');
           if (!value.trim() && !toDialog) close(false);
         }}
-        className="h-11"
+        className="h-11 border-gold text-[0.9375rem]"
       />
     </div>
   );

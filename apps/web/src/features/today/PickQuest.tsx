@@ -1,7 +1,7 @@
 import type { TodayResponse } from '@life-rpg/shared';
-import { Swords } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
+import { ChevronRightIcon, QuestIcon } from '@/shared/ui/icons';
 
 type Suggestion = TodayResponse['suggestions'][number];
 type PickQuestProps = {
@@ -19,12 +19,12 @@ export function PickQuest({ suggestions, takingId, onTake }: PickQuestProps) {
         <h2 id="pick-quest" className="type-heading">
           {ru.today.pick.title}
         </h2>
-        <p className="text-muted-foreground">{ru.today.pick.text}</p>
+        <p className="text-sm text-muted-foreground">{ru.today.pick.text}</p>
       </div>
       {/* Одна карточка со строками, а не три карточки (docs/ux.md: «Карточка „Выбери квест“ с тремя предложениями»).
           Выбор — золотое кольцо по краю строки, фокус — контур чуть глубже: оба внутри строки (снаружи их
           обрезал бы overflow-hidden) и не перекрывают друг друга, когда квест взят с клавиатуры. */}
-      <ul className="divide-y overflow-hidden rounded-xl bg-card">
+      <ul className="panel divide-y overflow-hidden">
         {suggestions.map((suggestion) => {
           const taking = suggestion.id === takingId;
           return (
@@ -38,16 +38,17 @@ export function PickQuest({ suggestions, takingId, onTake }: PickQuestProps) {
                 aria-label={ru.today.pick.take(suggestion.title, suggestion.lineTitle)}
                 onClick={() => takingId === null && onTake(suggestion)}
                 className={cn(
-                  'flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left outline-none transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid not-aria-disabled:hover:bg-muted/50 aria-disabled:cursor-default [li:first-child>&]:rounded-t-xl [li:last-child>&]:rounded-b-xl',
-                  taking && 'ring-2 ring-quest ring-inset',
+                  'flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left outline-none transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-ring focus-visible:outline-solid not-aria-disabled:hover:bg-surface-3/50 aria-disabled:cursor-default',
+                  taking && 'bg-linear-to-r from-halo to-transparent ring-1 ring-gold ring-inset',
                   takingId !== null && !taking && 'opacity-60',
                 )}
               >
-                <Swords className={cn('size-5 shrink-0', taking ? 'text-quest' : 'text-muted-foreground')} aria-hidden />
+                <QuestIcon className="text-gold" />
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium break-words">{suggestion.title}</span>
                   <span className="block text-sm text-muted-foreground break-words">{suggestion.lineTitle}</span>
                 </span>
+                <ChevronRightIcon className="size-4 text-muted-foreground" />
               </button>
             </li>
           );

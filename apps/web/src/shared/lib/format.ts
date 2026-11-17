@@ -8,6 +8,12 @@ export function isOverdue(deadline: string | null, today: string): boolean {
   return deadline !== null && deadline < today;
 }
 
+/** Сколько календарных дней прошло после дедлайна: «Срок прошёл 16 дней назад» (макет журнала). */
+export function daysOverdue(deadline: string, today: string): number {
+  const day = (date: string) => Date.parse(`${date}T00:00:00Z`);
+  return Math.round((day(today) - day(deadline)) / (24 * 60 * 60 * 1000));
+}
+
 export function formatDeadline(deadline: string, today: string): string {
   const sameYear = deadline.slice(0, 4) === today.slice(0, 4);
   // Дата без времени: форматируем в UTC, чтобы часовой пояс не сдвинул день.

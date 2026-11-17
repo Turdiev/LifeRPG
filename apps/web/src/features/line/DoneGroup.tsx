@@ -1,7 +1,7 @@
-import { ChevronRight } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
+import { ChevronRightIcon } from '@/shared/ui/icons';
 
 /** Выполненные элементы уровня свёрнуты в строку внизу группы: история видна, но не мешает (решение PRD). */
 export function DoneGroup({ count, className, children }: { count: number; className?: string; children: ReactNode }) {
@@ -15,11 +15,11 @@ export function DoneGroup({ count, className, children }: { count: number; class
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          'flex min-h-11 w-full items-center gap-1.5 rounded-lg px-2 text-left text-sm text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring',
+          'flex min-h-11 w-full items-center gap-2 text-left text-[0.8125rem] text-muted-foreground outline-none hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring',
           className,
         )}
       >
-        <ChevronRight className={cn('size-4 transition-transform', open && 'rotate-90')} aria-hidden />
+        <ChevronRightIcon className={cn('size-4 transition-transform', open && 'rotate-90')} />
         {ru.line.doneGroup(count)}
       </button>
       {open && children}

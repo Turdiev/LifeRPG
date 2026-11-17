@@ -3,6 +3,7 @@
 export const ru = {
   common: {
     close: 'Закрыть',
+    brand: 'LIFE RPG',
   },
   routeError: {
     text: 'Не удалось связаться с сервером. Проверь интернет и попробуй ещё раз.',
@@ -20,6 +21,8 @@ export const ru = {
       goal: 'Заговорить по-английски к лету',
       chapters: { grammar: 'Основы грамматики', vocabulary: 'Словарный запас', speaking: 'Разговорная практика' },
       quest: 'Выучить 50 слов о путешествиях',
+      // Первый этап выполнен — как «1 из 4» на кольце задания.
+      steps: ['Составить список слов', 'Выучить первые 25', 'Выучить остальные 25', 'Пройти тест без подсказок'],
     },
   },
   settings: {
@@ -27,6 +30,12 @@ export const ru = {
     open: 'Настройки',
     back: 'К журналу',
     account: 'Аккаунт Google',
+    theme: {
+      title: 'Тема',
+      system: 'Как в системе',
+      light: 'Пергамент',
+      dark: 'Обсидиан',
+    },
     signOut: 'Выйти',
     signingOut: 'Выходим…',
     signOutFailed: 'Не удалось выйти. Попробуй ещё раз.',
@@ -51,6 +60,7 @@ export const ru = {
     more: (count: number, noun: string) => `ещё ${count} ${noun}`,
     moreNoun: { one: 'этап', few: 'этапа', many: 'этапов' },
     stepsLabel: (title: string) => `Этапы квеста «${title}»`,
+    nextStep: 'Следующий этап',
     completeQuest: 'Квест выполнен',
     questDone: 'Квест пройден',
     next: {
@@ -58,8 +68,6 @@ export const ru = {
       take: 'Взять',
       other: 'Выбрать другой',
     },
-    // Неразрывные пробелы: процент не отрывается от названия при переносе.
-    goal: (title: string, percent: number) => `${title}\u00a0·\u00a0${percent}%`,
     openGoal: (title: string, percent: number) => `Открыть цель «${title}», выполнено ${percent}%`,
     otherLines: 'Другие цели в работе',
     linesInProgress: 'Цели в работе',
@@ -109,7 +117,13 @@ export const ru = {
     retry: 'Повторить',
     newLine: 'Новая цель',
     activeQuest: 'Активный квест',
+    paused: 'На паузе',
+    done: 'Достигнута',
     deadline: (date: string) => `до ${date}`,
+    // Вместо даты — сколько прошло: спокойно, без «просрочено» (просрочка — не провал, docs/ux.md).
+    overdue: (count: number, noun: string) => `Срок прошёл ${count} ${noun} назад`,
+    overdueNoun: { one: 'день', few: 'дня', many: 'дней' },
+    newLineHint: 'Здесь начнётся ещё одна история',
     chapter: (current: number, total: number) => `Глава ${current} из ${total}`,
     progress: (percent: number) => `${percent}%`,
     progressLabel: (title: string) => `Прогресс цели «${title}»`,
@@ -151,10 +165,11 @@ export const ru = {
   completion: {
     chapter: 'Глава пройдена',
     line: 'Цель достигнута',
-    days: (count: number, noun: string) => `За ${count} ${noun}`,
+    // Итоги — крупная цифра и подпись под ней: «42 дня / от начала до финала», «7 / заданий выполнено».
+    days: (count: number, noun: string) => `${count} ${noun}`,
     daysNoun: { one: 'день', few: 'дня', many: 'дней' },
-    quests: (count: number, noun: string) => `Выполнено ${count} ${noun}`,
-    questsNoun: { one: 'задание', few: 'задания', many: 'заданий' },
+    daysCaption: 'от начала до финала',
+    questsCaption: { one: 'задание выполнено', few: 'задания выполнено', many: 'заданий выполнено' },
     next: 'Дальше',
   },
   toasts: {

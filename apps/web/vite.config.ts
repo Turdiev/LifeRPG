@@ -5,8 +5,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// Пергамент светлой темы (globals.css, --background): фон заставки и цвет системной панели.
-const PARCHMENT = '#ede6d6';
+// Обсидиан тёмной темы (globals.css, --background): тёмная тема главная, и под цвет фона иконки.
+// Манифест знает один цвет; в браузере панель следует выбранной теме (shared/lib/theme.ts).
+const OBSIDIAN = '#0d0b09';
 
 export default defineConfig({
   plugins: [
@@ -28,8 +29,8 @@ export default defineConfig({
         lang: 'ru',
         start_url: '/today',
         display: 'standalone',
-        theme_color: PARCHMENT,
-        background_color: PARCHMENT,
+        theme_color: OBSIDIAN,
+        background_color: OBSIDIAN,
         // Иконки — из `pnpm icons` (pwa-assets.config.js).
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },

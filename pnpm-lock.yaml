@@ -69,10 +69,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@fontsource-variable/golos-text':
-        specifier: 5.3.0
-        version: 5.3.0
-      '@fontsource/philosopher':
+      '@fontsource-variable/onest':
+        specifier: 5.3.1
+        version: 5.3.1
+      '@fontsource/forum':
         specifier: 5.3.0
         version: 5.3.0
       '@life-rpg/domain':
@@ -1331,11 +1331,11 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
-  '@fontsource-variable/golos-text@5.3.0':
-    resolution: {integrity: sha512-D+Evz5yqXYh6tsalc537FS+cPDWn2FTdO8j/K1ZZuFAvA7ib6WnusTiihciq7mMnm6GBo6XTlh0JXPrhBsam2g==}
+  '@fontsource-variable/onest@5.3.1':
+    resolution: {integrity: sha512-xaaw6G4HDB2/RczsWLD/2bnib4ykmQlTlBUN3GOEOiyErilZukQWVJG95h9zwAy0i8KY+QzDa+COPfqhI72Acw==}
 
-  '@fontsource/philosopher@5.3.0':
-    resolution: {integrity: sha512-jeycHVDesgFOcJkcsloZSqW/iVDAPd0/a9O5VRI3jmoIn1rNgedhJfosZpQttZHfsT+p28aLTmS61wAEjf9ljA==}
+  '@fontsource/forum@5.3.0':
+    resolution: {integrity: sha512-wZmonoit7JhG5usRNScbeNBzqnqijKD7Kzv6pRBXklVdwsADNarLG/5K6+XoCMx3JyBAwg52TxO+dretsomNrQ==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -5896,9 +5896,9 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@fontsource-variable/golos-text@5.3.0': {}
+  '@fontsource-variable/onest@5.3.1': {}
 
-  '@fontsource/philosopher@5.3.0': {}
+  '@fontsource/forum@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

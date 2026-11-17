@@ -74,7 +74,7 @@ export function TodayPage() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <TodayHeader />
 
       {/* После закрытия квеста карточка сама решает, когда показать «Выбери квест»: сначала — «Следующий квест». */}
@@ -111,9 +111,9 @@ function TodayHeader() {
   const now = new Date();
   const date = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).format(now);
   return (
-    <header className="space-y-1">
+    <header>
+      <Heading className="type-display">{ru.today.greeting[greeting(now.getHours())]}</Heading>
       <p className="text-sm text-muted-foreground first-letter:uppercase">{date}</p>
-      <Heading className="type-title">{ru.today.greeting[greeting(now.getHours())]}</Heading>
     </header>
   );
 }
@@ -173,7 +173,7 @@ function ActiveQuest({ quest, isActive, closedHere, onClosed, takenHere, takingI
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="space-y-3">
         <QuestCard view={view} finished={finished} focusTitle={takenHere} onToggle={toggle} />
         <GoalLink line={view.line} progress={view.lineProgress} />
         {next && !choosingOther && (
@@ -247,9 +247,9 @@ function NoActiveQuest({ state, data, takingId, onTake, onCreate }: NoActiveQues
 
 function EmptyState({ title, text, children }: { title: string; text: string; children: ReactNode }) {
   return (
-    <section className="space-y-3">
+    <section className="panel space-y-3 p-4">
       <h2 className="type-heading">{title}</h2>
-      <p className="max-w-[46ch] text-muted-foreground">{text}</p>
+      <p className="max-w-[46ch] text-sm text-muted-foreground">{text}</p>
       {children}
     </section>
   );
@@ -257,13 +257,14 @@ function EmptyState({ title, text, children }: { title: string; text: string; ch
 
 function TodaySkeleton() {
   return (
-    <div className="space-y-8" aria-hidden>
+    <div className="space-y-5" aria-hidden>
       <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-7 w-48" />
       </div>
-      <Skeleton className="h-56 rounded-xl" />
-      <Skeleton className="h-24 rounded-xl" />
+      <Skeleton className="h-56" />
+      <Skeleton className="h-12" />
+      <Skeleton className="h-12" />
     </div>
   );
 }

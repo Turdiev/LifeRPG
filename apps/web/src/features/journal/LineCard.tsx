@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router';
-import { Check, Flag, MoreHorizontal, Pause, Scroll, Swords } from 'lucide-react';
 import type { LineSummary } from '@/shared/api/quests-api';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
+import { CalendarIcon, DotsIcon, FlagIcon, HourglassIcon, PauseIcon } from '@/shared/ui/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/ui/dropdown-menu';
 import { Progress } from '@/shared/ui/progress';
-import { formatDeadline, isOverdue, percent } from '@/shared/lib/format';
+import { daysOverdue, formatDeadline, isOverdue, percent } from '@/shared/lib/format';
+import { plural } from '@/shared/lib/plural';
 import type { LineChangeAction } from './use-journal';
 
 type LineCardProps = {
@@ -25,28 +26,27 @@ type LineCardProps = {
 export function LineCard({ line, today, onEdit, onChange }: LineCardProps) {
   const progress = percent(line.progress);
   const muted = line.status === 'paused' || line.status === 'cancelled';
+  const hasMeta = line.status === 'paused' || line.status === 'done' || line.deadline !== null;
   // Отменённая или завершённая цель не может опоздать: охра — только у живых целей.
   const overdue = (line.status === 'open' || line.status === 'paused') && isOverdue(line.deadline, today);
 
   return (
     <article
       className={cn(
-        // Без рамки: карточку отделяет заливка (docs/ux.md, «Атмосфера»: без декоративных рамок). Фокус —
-        // контур снаружи, а не кольцо: кольцо заменило бы золото активной линии, контур идёт рядом с ним.
-        'relative rounded-xl bg-card p-4 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring has-[a:focus-visible]:outline-solid',
-        // Золото — только у линии с активным квестом (docs/ux.md, «Цвета статусов»).
-        line.hasActiveQuest && 'ring-2 ring-quest',
+        // Фокус — контур снаружи, а не кольцо: так он не спорит с золотыми уголками активной линии.
+        'panel relative flex h-full flex-col px-3.5 pt-3.5 pb-3 has-[a:focus-visible]:outline-2 has-[a:focus-visible]:outline-offset-4 has-[a:focus-visible]:outline-ring has-[a:focus-visible]:outline-solid',
+        // Уголки — только у цели с активным квестом: она одна на экране (docs/ux.md, «Решения по UX»).
+        line.hasActiveQuest && 'ornate',
       )}
     >
-      <div className="flex items-start gap-2">
-        <StatusIcon status={line.status} />
+      <div className="flex items-start gap-1">
         <h2 className={cn('min-w-0 flex-1 pt-0.5 type-heading break-words', muted && 'text-muted-foreground')}>
           {/* Растянутая ссылка: вся карточка кликабельна, а меню остаётся отдельной кнопкой поверх. */}
           <Link
             to="/line/$lineId"
             params={{ lineId: line.id }}
             className={cn(
-              'outline-none after:absolute after:inset-0 after:rounded-xl after:content-[""]',
+              'outline-none after:absolute after:inset-0 after:content-[""]',
               line.status === 'cancelled' && 'line-through',
             )}
           >
@@ -56,47 +56,63 @@ export function LineCard({ line, today, onEdit, onChange }: LineCardProps) {
         <LineMenu line={line} onEdit={onEdit} onChange={onChange} />
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-        {line.hasActiveQuest && (
-          <span className="flex items-center gap-1 font-medium text-quest-foreground">
-            <Swords className="size-4" aria-hidden />
-            {ru.journal.activeQuest}
-          </span>
-        )}
-        {line.chapters && (
-          <span className="flex items-center gap-1">
-            <Flag className="size-4" aria-hidden />
-            {ru.journal.chapter(line.chapters.current, line.chapters.total)}
-          </span>
-        )}
-        {line.deadline && (
-          <span className={cn(overdue && 'font-medium text-overdue')}>
-            {ru.journal.deadline(formatDeadline(line.deadline, today))}
-          </span>
-        )}
-      </div>
+      {hasMeta && (
+        <div className="mt-1 mb-3 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[0.8125rem] text-muted-foreground">
+          <StatusPill status={line.status} />
+          {line.deadline && (
+            <span className={cn('inline-flex items-center gap-1.5', overdue && 'font-medium text-overdue')}>
+              {/* Просрочка — песочные часы, а не цвет: читается и без него (docs/ux.md, «Цвета статусов»). */}
+              {overdue ? <HourglassIcon className="size-4" /> : <CalendarIcon className="size-4" />}
+              {overdue
+                ? ru.journal.overdue(daysOverdue(line.deadline, today), plural(daysOverdue(line.deadline, today), ru.journal.overdueNoun))
+                : ru.journal.deadline(formatDeadline(line.deadline, today))}
+            </span>
+          )}
+        </div>
+      )}
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className={cn('flex items-center gap-3', !hasMeta && 'mt-3')}>
         <Progress
           value={progress}
           aria-label={ru.journal.progressLabel(line.title)}
           className="flex-1"
-          // Пауза и отмена — серые (docs/ux.md, «Цвета статусов»); зелень остаётся живым целям.
-          indicatorClassName={muted ? 'bg-muted-foreground/50' : undefined}
+          tone={line.status === 'paused' ? 'paused' : line.status === 'cancelled' ? 'cancelled' : 'active'}
         />
-        <span className="w-10 text-right text-sm tabular-nums text-muted-foreground">
+        <span className="min-w-9.5 text-right font-heading text-lg leading-none tabular-nums tracking-[0.04em] text-gold-text">
           {ru.journal.progress(progress)}
         </span>
       </div>
+
+      {(line.chapters || line.hasActiveQuest) && (
+        <div className="mt-auto flex items-center justify-between gap-3 pt-2.5 text-[0.8125rem] text-muted-foreground">
+          <span>{line.chapters && ru.journal.chapter(line.chapters.current, line.chapters.total)}</span>
+          {line.hasActiveQuest && (
+            <span className="inline-flex items-center gap-1.5 text-gold-text">
+              <FlagIcon className="size-4" />
+              {ru.journal.activeQuest}
+            </span>
+          )}
+        </div>
+      )}
     </article>
   );
 }
 
-function StatusIcon({ status }: { status: LineSummary['status'] }) {
-  const className = 'mt-1.5 size-5 shrink-0';
-  if (status === 'done') return <Check className={cn(className, 'text-success')} aria-hidden />;
-  if (status === 'paused') return <Pause className={cn(className, 'text-muted-foreground')} aria-hidden />;
-  return <Scroll className={cn(className, 'text-muted-foreground')} aria-hidden />;
+/** Пауза и завершение — подписью в рамке: состояние читается словом, а не только приглушённым цветом. */
+function StatusPill({ status }: { status: LineSummary['status'] }) {
+  if (status !== 'paused' && status !== 'done') return null;
+  const paused = status === 'paused';
+  return (
+    <span
+      className={cn(
+        'inline-flex min-h-6 items-center gap-1.5 rounded-full border px-2.5 text-xs',
+        paused ? 'border-paused text-paused' : 'border-border-strong text-gold-text',
+      )}
+    >
+      {paused && <PauseIcon className="size-3.5" />}
+      {paused ? ru.journal.paused : ru.journal.done}
+    </span>
+  );
 }
 
 function LineMenu({ line, onEdit, onChange }: Omit<LineCardProps, 'today'>) {
@@ -104,7 +120,7 @@ function LineMenu({ line, onEdit, onChange }: Omit<LineCardProps, 'today'>) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative z-10 -mt-1.5 -mr-2" aria-label={ru.lineMenu.open(line.title)}>
-          <MoreHorizontal />
+          <DotsIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">

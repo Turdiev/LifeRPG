@@ -1,90 +1,86 @@
 import { Dialog as DialogPrimitive } from 'radix-ui';
-import { useEffect, useState } from 'react';
-import { SegmentedProgress } from '@/features/line/SegmentedProgress';
-import { percent } from '@/shared/lib/format';
 import { plural } from '@/shared/lib/plural';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
+import { RuneDivider } from '@/shared/ui/icons';
 import type { CompletionView } from './completion-model';
 
-/**
- * Сцена: свиток разворачивается (800 мс), текст проявляется (с 800 мс), затем заливается шкала и
- * проходит блик. Разворот и проявление — keyframes в globals.css; меняя их, меняй и это число.
- */
-const FILL_DELAY_MS = 1100;
+/** Подпись и итоги поднимаются, когда баннер уже раскрылся (keyframes в globals.css). */
+const rise = 'motion-safe:animate-finale-rise';
 
 /**
- * Экран завершения главы или цели (F-16; docs/ux.md, «Атмосфера»): развёрнутый свиток с итогами и
- * одним золотым бликом. Единственная громкая сцена в приложении — остальное намеренно тихое.
+ * Экран завершения главы или цели (F-16; docs/ux.md, «Атмосфера»): вспышка, медленные лучи,
+ * баннер с раскрывающейся разрядкой и итоги. Единственная громкая сцена в приложении — остальное
+ * намеренно тихое. При «уменьшенном движении» вспышки, лучей и разрядки нет: экран сразу в покое.
  * Radix Dialog даёт фокус на «Дальше», Esc и возврат фокуса туда, где он был до показа.
  */
 export function CompletionOverlay({ view, onClose }: { view: CompletionView; onClose: () => void }) {
-  // При «уменьшенном движении» разворота нет — шкала сразу заполнена, без кадра с пустой.
-  const [filled, setFilled] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  useEffect(() => {
-    if (filled) return;
-    const timer = setTimeout(() => setFilled(true), FILL_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [filled]);
-  const segments = view.segments.map((segment) =>
-    view.filling.includes(segment.id) && !filled ? { ...segment, done: 0 } : segment,
-  );
-  const value = percent({
-    done: view.segments.reduce((sum, s) => sum + s.done, 0),
-    total: view.segments.reduce((sum, s) => sum + s.total, 0),
-  });
-
   return (
     <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0" />
-        <DialogPrimitive.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 outline-none motion-reduce:animate-in motion-reduce:fade-in-0">
-          <Roller />
-          <div className="grid motion-safe:animate-scroll-unroll">
-            <div className="relative min-h-0 overflow-hidden bg-card px-6 shadow-lg">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-linear-to-r from-transparent via-quest/20 to-transparent motion-safe:animate-quest-shimmer motion-safe:[animation-delay:1100ms] motion-reduce:hidden"
-              />
-              <div className="relative space-y-5 py-7 motion-safe:animate-scroll-text">
-                <DialogPrimitive.Title className="space-y-1">
-                  <span className="block type-heading text-muted-foreground">
-                    {view.kind === 'line' ? ru.completion.line : ru.completion.chapter}
-                  </span>
-                  <span className="block type-display break-words">{view.title}</span>
-                </DialogPrimitive.Title>
-                {view.segments.length > 0 && (
-                  <SegmentedProgress
-                    segments={segments}
-                    lineId={view.lineId}
-                    value={value}
-                    label={view.title}
-                    muted={false}
-                  />
-                )}
-                <DialogPrimitive.Description asChild>
-                  <div>
-                    <p>{ru.completion.days(view.days, plural(view.days, ru.completion.daysNoun))}</p>
-                    {/* Пустую главу можно закрыть вручную (PRD, «Прогресс») — «выполнено 0» не поздравление. */}
-                    {view.questsDone > 0 && (
-                      <p>{ru.completion.quests(view.questsDone, plural(view.questsDone, ru.completion.questsNoun))}</p>
-                    )}
+        {/* Колонка с прокруткой и кнопкой в потоке: на низком экране или с длинным названием итоги не
+            уходят под «Дальше». Свет и лучи — fixed, они не прокручиваются вместе с текстом. */}
+        <DialogPrimitive.Content className="fixed inset-0 z-50 flex flex-col items-center overflow-x-hidden overflow-y-auto bg-background px-7 pt-10 pb-[max(2.125rem,env(safe-area-inset-bottom))] text-center outline-none">
+          {/* Свет в центре и затемнение по краям. */}
+          <span
+            aria-hidden
+            className="fixed inset-0 bg-[radial-gradient(70%_45%_at_50%_46%,rgb(244_215_140/0.22),transparent_70%),radial-gradient(120%_90%_at_50%_50%,transparent_40%,rgb(0_0_0/0.85))] in-data-[theme=light]:bg-[radial-gradient(70%_45%_at_50%_46%,rgb(255_248_225/0.7),transparent_70%),radial-gradient(120%_90%_at_50%_50%,transparent_40%,rgb(110_75_25/0.45))]"
+          />
+          <span
+            aria-hidden
+            className="fixed top-[46%] left-1/2 -mt-[340px] -ml-[340px] size-[680px] bg-[repeating-conic-gradient(from_0deg,rgb(244_215_140/0.1)_0_4deg,transparent_4deg_18deg)] [mask-image:radial-gradient(circle,#000,transparent_62%)] in-data-[theme=light]:bg-[repeating-conic-gradient(from_0deg,rgb(168_115_28/0.12)_0_4deg,transparent_4deg_18deg)] motion-safe:animate-finale-rays"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_46%,#fff7dc,rgb(244_215_140/0.7)_22%,transparent_62%)] opacity-0 motion-safe:animate-finale-flash"
+          />
+
+          <div className="relative my-auto flex w-full max-w-sm flex-col items-center">
+            <p aria-hidden className={`pl-[0.5em] font-heading text-sm tracking-[0.5em] text-gold ${rise}`}>
+              {ru.common.brand}
+            </p>
+            <DialogPrimitive.Title className="mt-3.5">
+              <span className="block pl-[0.38em] font-heading text-[2.375rem] leading-[1.15] tracking-[0.38em] text-gold-text uppercase [text-shadow:0_0_28px_var(--glow)] motion-safe:animate-finale-banner max-[380px]:text-[2rem]">
+                {view.kind === 'line' ? ru.completion.line : ru.completion.chapter}
+              </span>
+              <RuneDivider className={`my-4.5 w-full max-w-75 ${rise}`} />
+              <span className={`block type-display text-[1.875rem] break-words ${rise}`}>{view.title}</span>
+              {view.lineTitle && (
+                <span className={`mt-1 block font-sans text-base text-muted-foreground break-words ${rise}`}>
+                  {view.lineTitle}
+                </span>
+              )}
+            </DialogPrimitive.Title>
+            <DialogPrimitive.Description asChild>
+              <dl className={`mt-8.5 flex justify-center gap-8.5 ${rise}`}>
+                <div className="flex flex-col-reverse">
+                  <dt className="text-[0.8125rem] text-muted-foreground">{ru.completion.daysCaption}</dt>
+                  <dd className="font-heading text-[2.125rem] leading-[1.1] tracking-[0.03em]">
+                    {ru.completion.days(view.days, plural(view.days, ru.completion.daysNoun))}
+                  </dd>
+                </div>
+                {/* Пустую главу можно закрыть вручную (PRD, «Прогресс») — «0 выполнено» не поздравление. */}
+                {view.questsDone > 0 && (
+                  <div className="flex flex-col-reverse">
+                    <dt className="text-[0.8125rem] text-muted-foreground">
+                      {plural(view.questsDone, ru.completion.questsCaption)}
+                    </dt>
+                    <dd className="font-heading text-[2.125rem] leading-[1.1] tracking-[0.03em]">{view.questsDone}</dd>
                   </div>
-                </DialogPrimitive.Description>
-                <DialogPrimitive.Close asChild>
-                  <Button className="h-11 w-full">{ru.completion.next}</Button>
-                </DialogPrimitive.Close>
-              </div>
-            </div>
+                )}
+              </dl>
+            </DialogPrimitive.Description>
           </div>
-          <Roller />
+
+          <div className={`relative mt-10 w-full max-w-sm ${rise}`}>
+            <DialogPrimitive.Close asChild>
+              <Button size="lg" className="w-full">
+                {ru.completion.next}
+              </Button>
+            </DialogPrimitive.Close>
+          </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
   );
-}
-
-/** Валик свитка: шире листа, чтобы читался как ось, на которую он намотан. */
-function Roller() {
-  return <span aria-hidden className="-mx-2 block h-3.5 rounded-full bg-track shadow-sm" />;
 }

@@ -1,7 +1,7 @@
-import { MoreHorizontal } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
+import { DotsIcon } from '@/shared/ui/icons';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,7 @@ export function NodeMenu({ node, locked, className }: { node: TreeNode; locked: 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={cn('shrink-0', className)} aria-label={ru.line.menu(node.title)}>
-          <MoreHorizontal />
+          <DotsIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">
