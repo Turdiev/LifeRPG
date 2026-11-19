@@ -14,6 +14,8 @@ function nodes(rows: [string, string | null, Quest['kind'], Quest['status']?][])
     title: id,
     description: null,
     deadline: null,
+    schedule: null,
+    scheduledOn: null,
     completedAt: status === 'done' ? '2026-11-01T00:00:00.000Z' : null,
     createdAt: '2026-10-01T00:00:00.000Z',
     progress: { done: 0, total: 0 },

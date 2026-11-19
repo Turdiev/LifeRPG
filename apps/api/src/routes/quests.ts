@@ -1,13 +1,16 @@
 import {
+  cancelQuestRequestSchema,
   completeQuestRequestSchema,
   createBatchRequestSchema,
   createQuestRequestSchema,
   moveQuestRequestSchema,
+  putScheduleRequestSchema,
   updateQuestRequestSchema,
 } from '@life-rpg/shared';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { AppEnv } from '../app-env';
+import { putSchedule, removeSchedule } from '../services/contracts';
 import { changeStatus, createBatch, createQuest, deleteQuest, moveQuest, updateQuest, type StatusAction } from '../services/quests';
 import { errorBody } from '../errors';
 import { idParamSchema, validate } from '../validation';
@@ -40,11 +43,21 @@ export const questsRoutes = new Hono<AppEnv>()
     const { id } = c.req.valid('param');
     return c.json(await changeStatus(c.var.db, c.var.userId, id, 'complete', c.req.valid('json')));
   })
+  .post('/:id/cancel', validate('param', idParamSchema), validate('json', cancelQuestRequestSchema), async (c) => {
+    const { id } = c.req.valid('param');
+    return c.json(await changeStatus(c.var.db, c.var.userId, id, 'cancel', c.req.valid('json')));
+  })
+  .put('/:id/schedule', validate('param', idParamSchema), validate('json', putScheduleRequestSchema), async (c) => {
+    return c.json(await putSchedule(c.var.db, c.var.userId, c.req.valid('param').id, c.req.valid('json')));
+  })
+  .delete('/:id/schedule', validate('param', idParamSchema), async (c) => {
+    return c.json(await removeSchedule(c.var.db, c.var.userId, c.req.valid('param').id));
+  })
   .delete('/:id', validate('param', idParamSchema), async (c) => {
     return c.json(await deleteQuest(c.var.db, c.var.userId, c.req.valid('param').id));
   });
 
-const actionsWithoutBody: StatusAction[] = ['reopen', 'pause', 'resume', 'cancel', 'restore'];
+const actionsWithoutBody: StatusAction[] = ['reopen', 'pause', 'resume', 'restore', 'finish'];
 for (const action of actionsWithoutBody) {
   questsRoutes.post(`/:id/${action}`, validate('param', idParamSchema), async (c) => {
     return c.json(await changeStatus(c.var.db, c.var.userId, c.req.valid('param').id, action));

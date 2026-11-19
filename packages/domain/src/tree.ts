@@ -57,3 +57,11 @@ export function isLeaf(tree: Tree, node: QuestNode): boolean {
 export function isLocked(node: QuestNode): boolean {
   return node.status === 'paused' || node.status === 'cancelled';
 }
+
+export function isContract(node: QuestNode): boolean {
+  return node.kind === 'quest' && node.schedule != null;
+}
+
+export function isContractDay(node: QuestNode): node is QuestNode & { scheduledOn: string } {
+  return node.kind === 'step' && node.scheduledOn != null;
+}

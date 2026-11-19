@@ -6,7 +6,9 @@ export type DomainErrorCode =
   /** Такой вид нельзя вложить в такого родителя. */
   | 'invalid_parent'
   /** Действие не имеет смысла для узла, например пауза этапа. */
-  | 'invalid_transition';
+  | 'invalid_transition'
+  /** День контракта ещё не наступил: отметить его нельзя. */
+  | 'not_due';
 
 /** API превращает её в `409 { code }`. */
 export class DomainError extends Error {

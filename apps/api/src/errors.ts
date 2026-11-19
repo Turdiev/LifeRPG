@@ -11,6 +11,14 @@ export class NotFoundError extends Error {
   }
 }
 
+/** Тело прошло схему, но неполно для этого узла: схема не знает, что отмечают день контракта без `today`. */
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
 export function errorBody(code: ErrorCode, message: string, details?: unknown): ErrorResponse {
   return { error: details === undefined ? { code, message } : { code, message, details } };
 }
@@ -18,6 +26,7 @@ export function errorBody(code: ErrorCode, message: string, details?: unknown): 
 export const handleError: ErrorHandler = (error, c) => {
   if (error instanceof DomainError) return c.json(errorBody(error.code, error.message), 409);
   if (error instanceof NotFoundError) return c.json(errorBody('not_found', error.message), 404);
+  if (error instanceof ValidationError) return c.json(errorBody('validation_failed', error.message), 400);
   // Hono бросает HTTPException 400 на тело, которое не разбирается как JSON.
   if (error instanceof HTTPException && error.status === 400) {
     return c.json(errorBody('validation_failed', error.message), 400);

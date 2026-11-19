@@ -1,4 +1,4 @@
-import type { Change, QuestStatus } from '@life-rpg/domain';
+import type { Change, QuestStatus, Schedule } from '@life-rpg/domain';
 import type { Quest } from '@life-rpg/shared';
 import { and, asc, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Executor } from './client';
@@ -17,6 +17,12 @@ function toRecord(row: typeof quests.$inferSelect): QuestRecord {
     title: row.title,
     description: row.description,
     deadline: row.deadline,
+    // CHECK quests_contract_schedule: колонки расписания заполнены все три или ни одной.
+    schedule:
+      row.repeatWeekdays === null
+        ? null
+        : { weekdays: row.repeatWeekdays, start: row.repeatStart!, end: row.repeatEnd! },
+    scheduledOn: row.scheduledOn,
     completedAt: row.completedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -33,6 +39,8 @@ export function toQuest(record: QuestRecord): Quest {
     title: record.title,
     description: record.description,
     deadline: record.deadline,
+    schedule: record.schedule,
+    scheduledOn: record.scheduledOn,
     completedAt: record.completedAt,
     createdAt: record.createdAt,
   };
@@ -108,6 +116,7 @@ export async function insertQuest(ex: Executor, userId: string, record: QuestRec
 
 /** Вставка списка — одним запросом; внешний ключ parent_id проверяется в конце команды. */
 export async function insertQuests(ex: Executor, userId: string, records: readonly QuestRecord[]): Promise<void> {
+  if (records.length === 0) return;
   await ex.insert(quests).values(
     records.map((record) => ({
       id: record.id,
@@ -120,6 +129,7 @@ export async function insertQuests(ex: Executor, userId: string, records: readon
       title: record.title,
       description: record.description,
       deadline: record.deadline,
+      scheduledOn: record.scheduledOn,
       // Явно, а не DEFAULT now(): ответ на создание отдаёт createdAt из записи — с базой он должен совпасть.
       createdAt: new Date(record.createdAt),
     })),
@@ -159,6 +169,32 @@ export async function updatePosition(ex: Executor, userId: string, id: string, p
     .where(ownedBy(userId, id))
     .returning();
   return toRecord(row!);
+}
+
+/** `null` снимает расписание; включение стирает дедлайн: срок контракта его заменяет (PRD, «Контракты»). */
+export async function setSchedule(
+  ex: Executor,
+  userId: string,
+  id: string,
+  schedule: Schedule | null,
+): Promise<QuestRecord> {
+  const [row] = await ex
+    .update(quests)
+    .set({
+      repeatWeekdays: schedule?.weekdays ?? null,
+      repeatStart: schedule?.start ?? null,
+      repeatEnd: schedule?.end ?? null,
+      ...(schedule && { deadline: null }),
+      updatedAt: new Date(),
+    })
+    .where(ownedBy(userId, id))
+    .returning();
+  return toRecord(row!);
+}
+
+export async function deleteQuests(ex: Executor, userId: string, ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await ex.delete(quests).where(and(inArray(quests.id, [...ids]), eq(quests.userId, userId)));
 }
 
 /** Потомков удаляет `ON DELETE CASCADE` по `parent_id`. */

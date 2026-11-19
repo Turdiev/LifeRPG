@@ -21,7 +21,7 @@ export async function listLines(db: Db, userId: string, status: QuestStatus): Pr
 }
 
 type LineSummary = LinesResponse['lines'][number];
-type LoadedLine = { summary: LineSummary; nodes: QuestRecord[]; tree: Tree };
+export type LoadedLine = { summary: LineSummary; nodes: QuestRecord[]; tree: Tree };
 
 /** Линии статуса с деревьями, в порядке журнала; «Сегодня» строит по тем же деревьям предложения. */
 export async function loadLines(
@@ -96,6 +96,8 @@ export async function createLine(db: Db, userId: string, body: CreateLineRequest
     title: body.title,
     description: body.description ?? null,
     deadline: body.deadline ?? null,
+    schedule: null,
+    scheduledOn: null,
     completedAt: null,
     createdAt: now,
     updatedAt: now,

@@ -177,6 +177,8 @@ function pendingNode(draft: Draft, now: string): TreeNode {
     position: `~${String((pendingSeq += 1)).padStart(8, '0')}`,
     description: null,
     deadline: null,
+    schedule: null,
+    scheduledOn: null,
     completedAt: null,
     createdAt: now,
     progress: { done: 0, total: 0 },
