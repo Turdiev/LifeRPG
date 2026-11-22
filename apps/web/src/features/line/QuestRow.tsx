@@ -1,8 +1,10 @@
+import { isContract } from '@life-rpg/domain';
 import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { ChevronRightIcon, FlagIcon } from '@/shared/ui/icons';
 import { ProgressRing } from '@/shared/ui/ProgressRing';
+import { ContractRow } from './ContractRow';
 import { DoneGroup } from './DoneGroup';
 import { InlineAdd } from './InlineAdd';
 import { isPending, useLineActions } from './line-actions';
@@ -11,11 +13,16 @@ import { StepRow } from './StepRow';
 
 type QuestRowProps = { quest: QuestView; expanded: boolean; onToggleExpanded: () => void };
 
+/** Контракт — та же строка задания, но со своим видом: неделя и группы дней вместо этапов. */
+export function QuestRow(props: QuestRowProps) {
+  return isContract(props.quest.node) ? <ContractRow {...props} /> : <PlainQuestRow {...props} />;
+}
+
 /**
  * Задание: кольцо прогресса, если есть этапы, иначе чекбокс. Тап по названию раскрывает
  * этапы, в раскрытом виде — открывает лист деталей (docs/ux.md, «Экран сюжетной линии»).
  */
-export function QuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
+function PlainQuestRow({ quest, expanded, onToggleExpanded }: QuestRowProps) {
   const { toggle, openDetails } = useLineActions();
   const { node } = quest;
   const done = node.status === 'done';

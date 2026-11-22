@@ -13,6 +13,8 @@ export type LineActions = {
   pasteList: (parentId: string, kind: DraftKind, text: string, returnFocus: HTMLElement) => void;
   openDetails: (id: string) => void;
   askDelete: (node: TreeNode) => void;
+  /** Завершение контракта — с диалогом: оно отменяет все неотмеченные дни (docs/ux.md). */
+  askFinish: (node: TreeNode) => void;
 };
 
 export const LineActionsContext = createContext<LineActions | null>(null);

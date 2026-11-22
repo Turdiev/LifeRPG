@@ -20,6 +20,7 @@ export {
   applySchedule,
   contractDates,
   defaultTerm,
+  MAX_TERM_DAYS,
   planSchedule,
   type SchedulePlan,
 } from './contract';

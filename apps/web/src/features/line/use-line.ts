@@ -3,6 +3,8 @@ import type {
   CreateQuestRequest,
   LineTreeResponse,
   MutationResponse,
+  PutScheduleRequest,
+  ScheduleResponse,
   UpdateQuestRequest,
 } from '@life-rpg/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,11 +18,15 @@ import {
   createQuestBatch,
   deleteQuest,
   fetchTree,
+  finishContract,
+  putSchedule,
+  removeSchedule,
   reopenQuest,
   runStatusAction,
   setActiveQuest,
   updateQuest,
 } from '@/shared/api/quests-api';
+import { localToday } from '@/shared/lib/format';
 import { ru } from '@/shared/strings/ru';
 import {
   applyStatusLocally,
@@ -38,16 +44,19 @@ export function useLineTree(lineId: string) {
   return useQuery({ queryKey: queryKeys.tree(lineId), queryFn: () => fetchTree(lineId) });
 }
 
-type TreeMutationOptions<V> = {
-  mutationFn: (vars: V) => Promise<MutationResponse>;
+type TreeMutationOptions<V, R extends MutationResponse> = {
+  mutationFn: (vars: V) => Promise<R>;
   /** Что пользователь видит сразу, до ответа сервера (docs/ux.md, «Общие состояния»). */
   optimistic: (data: LineTreeResponse, vars: V) => LineTreeResponse;
-  merge?: (data: LineTreeResponse, response: MutationResponse, vars: V) => LineTreeResponse;
-  onDone?: (response: MutationResponse, vars: V) => void;
+  merge?: (data: LineTreeResponse, response: R, vars: V) => LineTreeResponse;
+  onDone?: (response: R, vars: V) => void;
 };
 
 /** Снимок → локальный расчёт доменом → ответ сервера поверх; при ошибке откат и «Повторить». */
-function useTreeMutation<V>(lineId: string, options: TreeMutationOptions<V>) {
+function useTreeMutation<V, R extends MutationResponse = MutationResponse>(
+  lineId: string,
+  options: TreeMutationOptions<V, R>,
+) {
   const queryClient = useQueryClient();
   const key = queryKeys.tree(lineId);
   const mutationKey = ['line-mutation', lineId];
@@ -105,22 +114,27 @@ export function useNodeStatus(lineId: string) {
   const queryClient = useQueryClient();
   const showCompletion = useShowCompletion();
   const mutation = useTreeMutation<StatusVars>(lineId, {
+    // «Сегодня» — на момент отправки: отложенная без сети отметка уйдёт с более поздней датой, а она
+    // никогда не запретит отметить день, наступивший раньше.
     mutationFn: ({ node, action, withChildren }) => {
-      if (action === 'complete') return completeQuest(node.id, withChildren ?? false);
+      if (action === 'complete') return completeQuest(node.id, withChildren ?? false, localToday());
       if (action === 'reopen') return reopenQuest(node.id);
-      return runStatusAction(node.id, action);
+      if (action === 'finish') return finishContract(node.id);
+      return runStatusAction(node.id, action, localToday());
     },
     optimistic: (data, { node, action, withChildren }) =>
-      applyStatusLocally(data, node.id, action, now(), { withChildren }),
+      applyStatusLocally(data, node.id, action, now(), { withChildren, today: localToday() }),
     // Отметка видна сама по себе; тост с «Вернуть» — только у паузы, отмены и обратных к ним.
     onDone: (response, { node, action }) => {
       // Экран завершения — по ответу сервера, а не по оптимистичной отметке: поздравление, которое
       // потом откатит ошибка, хуже задержки в доли секунды (docs/ux.md, «Решения по UX»).
-      if (action === 'complete') {
+      if (action === 'complete' || action === 'finish') {
         const data = queryClient.getQueryData<LineTreeResponse>(queryKeys.tree(lineId));
         const view = data && completionView(data, response.changed);
         if (view) showCompletion(view);
       }
+      // Завершение отменяет все неотмеченные дни: одной кнопкой «Вернуть» его не откатить (docs/ux.md).
+      if (action === 'finish' && response.changed.length > 0) toast(ru.contract.toasts.finished);
       const message = statusToast[action];
       const undo = inverse[action];
       if (!message || !undo) return;
@@ -177,6 +191,24 @@ export function useSetActiveQuest(lineId: string) {
     optimistic: (data, { questId }) => ({ ...data, activeQuestId: questId }),
     onDone: (_response, { questId }) => {
       if (questId) toast(ru.line.toasts.tracked);
+    },
+  });
+}
+
+type ScheduleVars = { id: string; body: PutScheduleRequest | null; enabling: boolean };
+
+/**
+ * Расписание сохраняется без оптимизма: оно создаёт и удаляет десятки дней, и кеш обновляется
+ * по ответу сервера, как после вставки списка (tech-spec, «Данные и кэш»).
+ */
+export function useSchedule(lineId: string) {
+  return useTreeMutation<ScheduleVars, ScheduleResponse>(lineId, {
+    mutationFn: ({ id, body }) => (body ? putSchedule(id, body) : removeSchedule(id)),
+    optimistic: (data) => data,
+    merge: (data, response) => mergeResponse(data, response, response.removed),
+    onDone: (_response, { body, enabling }) => {
+      const { made, changed, removed } = ru.contract.toasts;
+      toast(body === null ? removed : enabling ? made : changed);
     },
   });
 }

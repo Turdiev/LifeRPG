@@ -1,15 +1,19 @@
-import { buildTree, canBeActive, isBranchLocked } from '@life-rpg/domain';
+import { buildTree, canBeActive, isBranchLocked, isContract, isContractDay } from '@life-rpg/domain';
+import type { PutScheduleRequest } from '@life-rpg/shared';
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
+import { localToday } from '@/shared/lib/format';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
-import { ChapterIcon, CloseIcon, FlagIcon, LineIcon, QuestIcon, StepIcon } from '@/shared/ui/icons';
+import { ChapterIcon, CloseIcon, FlagIcon, LineIcon, QuestIcon, ScrollIcon, StepIcon } from '@/shared/ui/icons';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/shared/ui/sheet';
 import { Textarea } from '@/shared/ui/textarea';
+import { dayLabel } from './contract-format';
 import { isPending, useLineActions } from './line-actions';
-import type { TreeNode } from './line-model';
+import { allows, applyStatusLocally, type TreeNode } from './line-model';
+import { ScheduleForm } from './ScheduleForm';
 
 type NodeDetailsSheetProps = {
   node: TreeNode | undefined;
@@ -18,6 +22,9 @@ type NodeDetailsSheetProps = {
   onClose: () => void;
   onSave: (id: string, body: FieldsBody) => void;
   onMakeActive: (id: string) => void;
+  /** `null` снимает расписание. */
+  onSchedule: (id: string, body: PutScheduleRequest | null) => void;
+  scheduling: boolean;
 };
 
 /**
@@ -25,19 +32,12 @@ type NodeDetailsSheetProps = {
  * Правка на месте, сохранение при потере фокуса (docs/ux.md, «Взаимодействия»). На телефоне —
  * лист снизу, на компьютере — панель справа от дерева (docs/ux.md, «Карта экранов»).
  */
-export function NodeDetailsSheet({ node, nodes, activeQuestId, onClose, onSave, onMakeActive }: NodeDetailsSheetProps) {
+export function NodeDetailsSheet({ node, onClose, ...rest }: NodeDetailsSheetProps) {
   const isDesktop = useIsDesktop();
   // key пересоздаёт поля, когда детали переключают на другой узел.
   const details = (variant: DetailsVariant, current: TreeNode) => (
-    <Details
-      key={current.id}
-      variant={variant}
-      node={current}
-      nodes={nodes}
-      activeQuestId={activeQuestId}
-      onSave={onSave}
-      onMakeActive={onMakeActive}
-    />
+    // Снятое расписание пересоздаёт поля: переключатель и стёртый сервером дедлайн берутся из узла заново.
+    <Details key={`${current.id}-${current.schedule === null}`} variant={variant} node={current} {...rest} />
   );
 
   if (isDesktop) return node ? <DetailsPanel key={node.id} onClose={onClose}>{details('panel', node)}</DetailsPanel> : null;
@@ -96,12 +96,20 @@ const kindIcons = { line: LineIcon, chapter: ChapterIcon, quest: QuestIcon, step
 
 type DetailsProps = Omit<NodeDetailsSheetProps, 'onClose' | 'node'> & { node: TreeNode; variant: DetailsVariant };
 
-function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: DetailsProps) {
-  const { run, askDelete } = useLineActions();
+function Details({ node, nodes, activeQuestId, onSave, onMakeActive, onSchedule, scheduling, variant }: DetailsProps) {
+  const { run, askDelete, askFinish } = useLineActions();
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
   const [deadline, setDeadline] = useState(node.deadline ?? '');
+  const contract = isContract(node);
+  const day = isContractDay(node);
+  // Включённый переключатель прячет дедлайн: у контракта его роль играет срок (docs/ux.md).
+  const [repeat, setRepeat] = useState(contract);
   const tree = buildTree(nodes);
+  const today = localToday();
+  // Кнопки контракта и дня — по тем же правилам домена, по которым сервер ответил бы 409.
+  const can = (action: 'finish' | 'cancel' | 'restore') =>
+    allows(() => applyStatusLocally({ nodes: [...nodes], activeQuestId }, node.id, action, '', { today }));
   const branchLocked = isBranchLocked(tree, node.id);
   // Правка в замороженной ветке — 409 по правилу 3; несохранённый узел сервер ещё не знает.
   const readOnly = branchLocked || isPending(node);
@@ -111,10 +119,11 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
     if (readOnly) return;
     const body: FieldsBody = {};
     const trimmedTitle = title.trim();
-    if (trimmedTitle && trimmedTitle !== node.title) body.title = trimmedTitle;
+    // Название дня — его дата, а дедлайн у контракта и его дней заменяет срок: сервер отклонил бы правку.
+    if (!day && trimmedTitle && trimmedTitle !== node.title) body.title = trimmedTitle;
     const trimmedDescription = description.trim();
     if (trimmedDescription !== (node.description ?? '')) body.description = trimmedDescription || null;
-    if (deadline !== (node.deadline ?? '')) body.deadline = deadline || null;
+    if (!repeat && !day && deadline !== (node.deadline ?? '')) body.deadline = deadline || null;
     if (Object.keys(body).length > 0) onSave(node.id, body);
   }
 
@@ -126,12 +135,17 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
   const showMakeActive =
     !isPending(node) && node.kind === 'quest' && node.id !== activeQuestId && canBeActive(tree, node.id);
 
-  const KindIcon = kindIcons[node.kind];
+  const showSchedule =
+    node.kind === 'quest' && !isPending(node) && (contract || (tree.children.get(node.id) ?? []).length === 0);
+  const KindIcon = contract ? ScrollIcon : kindIcons[node.kind];
+  // Название дня — дата ISO; читать её вслух как «2026-12-02» незачем.
+  const heading = day ? dayLabel(node.scheduledOn, today) : node.title;
+  const kindLabel = contract ? ru.contract.kind : day ? ru.contract.dayKind : ru.line.details.kind[node.kind];
   const meta = (
     <>
       <span className="flex items-center gap-2 text-gold-text">
         <KindIcon className="size-4 text-gold" />
-        {ru.line.details.kind[node.kind]}
+        {kindLabel}
       </span>
       {path.length > 0 && <span className="mt-0.5 block break-words">{path.join(' › ')}</span>}
     </>
@@ -143,7 +157,7 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
       {variant === 'sheet' ? (
         <SheetHeader>
           <SheetDescription>{meta}</SheetDescription>
-          <SheetTitle className="sr-only">{node.title}</SheetTitle>
+          <SheetTitle className="sr-only">{heading}</SheetTitle>
         </SheetHeader>
       ) : (
         <header className="px-4 pr-14 text-[0.8125rem] text-muted-foreground">
@@ -156,7 +170,7 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
             <KindIcon className="size-13 stroke-[1.2]" />
           </span>
           <h2 id={DETAILS_TITLE_ID} className="sr-only">
-            {node.title}
+            {heading}
           </h2>
           <p>{meta}</p>
         </header>
@@ -167,9 +181,9 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
           <Label htmlFor="node-title">{ru.line.details.title}</Label>
           <Input
             id="node-title"
-            value={title}
+            value={day ? dayLabel(node.scheduledOn, today) : title}
             maxLength={120}
-            readOnly={readOnly}
+            readOnly={readOnly || day}
             onChange={(event) => setTitle(event.target.value)}
             onBlur={() => (title.trim() ? save() : setTitle(node.title))}
             onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
@@ -190,19 +204,33 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
             onBlur={save}
           />
         </div>
-        <div className="grid gap-2">
-          <Label htmlFor="node-deadline">{ru.line.details.deadline}</Label>
-          {/* Не onChange: при наборе года браузер шлёт промежуточные даты вроде 0002-05-01. */}
-          <Input
-            id="node-deadline"
-            type="date"
-            value={deadline}
-            readOnly={readOnly}
-            onChange={(event) => setDeadline(event.target.value)}
-            onBlur={save}
-            className="w-fit"
+        {showSchedule && (
+          <ScheduleForm
+            node={node}
+            nodes={nodes}
+            repeat={repeat}
+            onRepeatChange={setRepeat}
+            // Отменённое задание или контракт на паузе контрактом не становятся и не меняются (PRD, правило 1).
+            readOnly={readOnly || node.status === 'cancelled' || node.status === 'paused'}
+            saving={scheduling}
+            onSave={(body) => onSchedule(node.id, body)}
           />
-        </div>
+        )}
+        {!repeat && !day && (
+          <div className="grid gap-2">
+            <Label htmlFor="node-deadline">{ru.line.details.deadline}</Label>
+            {/* Не onChange: при наборе года браузер шлёт промежуточные даты вроде 0002-05-01. */}
+            <Input
+              id="node-deadline"
+              type="date"
+              value={deadline}
+              readOnly={readOnly}
+              onChange={(event) => setDeadline(event.target.value)}
+              onBlur={save}
+              className="w-fit"
+            />
+          </div>
+        )}
 
         {!isPending(node) && (
           <div className="grid gap-2 pt-2">
@@ -222,20 +250,41 @@ function Details({ node, nodes, activeQuestId, onSave, onMakeActive, variant }: 
                 {ru.line.actions.resume}
               </Button>
             )}
-            {!branchLocked && node.status !== 'cancelled' && node.status !== 'done' && (
+            {/* Выполненный контракт домен «завершает» пустым списком — кнопка нужна только открытому. */}
+            {contract && !branchLocked && node.status === 'open' && can('finish') && (
+              <Button variant="outline" onClick={() => askFinish(node)}>
+                {ru.contract.finishContract}
+              </Button>
+            )}
+            {/* Как у этапов: отменить можно неотмеченный день, отмеченный сначала снимают с отметки. */}
+            {day && !branchLocked && node.status === 'open' && can('cancel') && (
+              <Button variant="outline" onClick={() => run(node, 'cancel')}>
+                {ru.contract.cancelDay}
+              </Button>
+            )}
+            {/* Будущие дни отменяет только завершение, и вернуть их — дело расписания (docs/ux.md). */}
+            {day && !branchLocked && node.status === 'cancelled' && node.scheduledOn <= today && can('restore') && (
+              <Button variant="outline" onClick={() => run(node, 'restore')}>
+                {ru.contract.restoreDay}
+              </Button>
+            )}
+            {!day && !branchLocked && node.status !== 'cancelled' && node.status !== 'done' && (
               <Button variant="outline" onClick={() => run(node, 'cancel')}>
                 {ru.line.actions.cancel}
               </Button>
             )}
-            {!branchLocked && node.status === 'cancelled' && (
+            {!day && !branchLocked && node.status === 'cancelled' && (
               <Button variant="outline" onClick={() => run(node, 'restore')}>
                 {ru.line.actions.restore}
               </Button>
             )}
             {/* Тихая ссылка, а не красная кнопка: удаление и так переспросит диалогом (docs/ux.md). */}
-            <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => askDelete(node)}>
-              {ru.line.actions.delete}
-            </Button>
+            {/* Дни удаляет только расписание (tech-spec, правило 9). */}
+            {!day && (
+              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={() => askDelete(node)}>
+                {ru.line.actions.delete}
+              </Button>
+            )}
           </div>
         )}
       </div>
