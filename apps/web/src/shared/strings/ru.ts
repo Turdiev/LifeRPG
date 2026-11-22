@@ -74,6 +74,14 @@ export const ru = {
       other: 'Выбрать другой',
     },
     openGoal: (title: string, percent: number) => `Открыть цель «${title}», выполнено ${percent}%`,
+    contracts: {
+      title: 'На сегодня',
+      progress: (done: number, total: number) => `${done} из ${total}`,
+      expired: (done: number, total: number) => `Срок вышел, отмечено ${done} из ${total}`,
+      expiredNone: 'Срок вышел, ни один день не отмечен',
+      dayToday: (title: string) => `«${title}» — день за сегодня`,
+      open: (title: string) => `Открыть контракт «${title}»`,
+    },
     otherLines: 'Другие цели в работе',
     linesInProgress: 'Цели в работе',
     pick: {

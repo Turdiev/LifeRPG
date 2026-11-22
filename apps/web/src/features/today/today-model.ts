@@ -84,6 +84,47 @@ export function nextQuestView(nodes: readonly TreeNode[], afterQuestId: string):
   return { quest, chapter: parent?.kind === 'chapter' ? parent : null };
 }
 
+/**
+ * Дерево линии из ответа «Сегодня» — первые данные для `['tree', lineId]`. `activeQuestId` в дереве линии
+ * глобальный, как у `GET /lines/:id/tree`: у линии контракта это активный квест из другой линии или `null`.
+ */
+export function lineTreeFromToday(today: TodayResponse, lineId: string): LineTreeResponse | undefined {
+  const activeQuestId = today.active?.questId ?? null;
+  if (today.active?.lineId === lineId) return { nodes: today.active.nodes, activeQuestId };
+  const nodes = today.contracts?.lines.find((line) => line.lineId === lineId)?.nodes;
+  return nodes && { nodes, activeQuestId };
+}
+
+export type TodayContractItem = NonNullable<TodayResponse['contracts']>['items'][number];
+
+export type TodayContractView = {
+  contract: TreeNode;
+  /** День на сегодня; `null` — у контракта с вышедшим сроком. */
+  day: TreeNode | null;
+  /** «Цель › Глава». */
+  path: string[];
+  progress: Progress;
+  expired: boolean;
+};
+
+/**
+ * Строка блока «На сегодня» (docs/ux.md, F-23). Какие контракты в блоке, решил сервер, а статус дня
+ * и «8 из 27» читаются из дерева линии в кеше: оптимистичная отметка меняет дерево, а не ответ `/today`.
+ */
+export function todayContractView(nodes: readonly TreeNode[], item: TodayContractItem): TodayContractView | null {
+  const contract = nodes.find((node) => node.id === item.questId);
+  const day = item.dayId === null ? null : nodes.find((node) => node.id === item.dayId);
+  // День исчез из дерева — расписание изменили; строку уберёт перезапрос «Сегодня».
+  if (!contract || day === undefined) return null;
+  return {
+    contract,
+    day,
+    path: item.path.map((ref) => ref.title),
+    progress: progress(buildTree(nodes), contract.id),
+    expired: item.expired,
+  };
+}
+
 /** Что показать, когда активного квеста нет (docs/ux.md, «Сегодня», «Состояния»). */
 export type TodayState = 'first' | 'allPaused' | 'nothingOpen' | 'pick' | 'noQuests';
 

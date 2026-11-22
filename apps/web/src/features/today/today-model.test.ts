@@ -1,7 +1,15 @@
 import type { Quest, TodayResponse } from '@life-rpg/shared';
 import { describe, expect, it } from 'vitest';
 import type { TreeNode } from '@/features/line/line-model';
-import { buildTodayView, closedByComplete, greeting, nextQuestView, todayState } from './today-model';
+import {
+  buildTodayView,
+  closedByComplete,
+  greeting,
+  lineTreeFromToday,
+  nextQuestView,
+  todayContractView,
+  todayState,
+} from './today-model';
 
 // Компактное дерево: [id, parentId, kind, status?]; позиции растут в порядке перечисления.
 function nodes(rows: [string, string | null, Quest['kind'], Quest['status']?][]): TreeNode[] {
@@ -226,5 +234,62 @@ describe('greeting', () => {
       'evening',
       'night',
     ]);
+  });
+});
+
+describe('todayContractView', () => {
+  const data = nodes([
+    ['L', null, 'line'],
+    ['C', 'L', 'chapter'],
+    ['K', 'C', 'quest'],
+    ['D1', 'K', 'step', 'done'],
+    ['D2', 'K', 'step'],
+    ['D3', 'K', 'step', 'cancelled'],
+    ['D4', 'K', 'step'],
+  ]);
+  const item = {
+    questId: 'K',
+    title: 'K',
+    dayId: 'D2',
+    lineId: 'L',
+    path: [
+      { id: 'L', title: 'Цель' },
+      { id: 'C', title: 'Глава' },
+    ],
+    progress: { done: 0, total: 0 },
+    expired: false,
+  };
+
+  it('reads today’s day and the progress from the line tree, not from the stale item', () => {
+    const view = todayContractView(data, item)!;
+
+    expect(view.contract.id).toBe('K');
+    expect(view.day?.id).toBe('D2');
+    expect(view.path).toEqual(['Цель', 'Глава']);
+    expect(view.progress).toEqual({ done: 1, total: 3 });
+    expect(view.expired).toBe(false);
+  });
+
+  it('has no day for an expired contract, and nothing once the day is gone from the tree', () => {
+    expect(todayContractView(data, { ...item, dayId: null, expired: true })).toMatchObject({ day: null, expired: true });
+    expect(todayContractView(data, { ...item, dayId: 'gone' })).toBeNull();
+  });
+});
+
+describe('lineTreeFromToday', () => {
+  const lineNodes = (lineId: string) => nodes([[lineId, null, 'line']]);
+  const today: TodayResponse = {
+    active: { questId: 'Q', lineId: 'A', nodes: lineNodes('A') },
+    otherLines: [],
+    suggestions: [],
+    counts: { open: 2, paused: 0, done: 0, cancelled: 0 },
+    contracts: { items: [], lines: [{ lineId: 'B', nodes: lineNodes('B') }] },
+  };
+
+  it('seeds the active line and a contract line with the global active quest, and nothing else', () => {
+    expect(lineTreeFromToday(today, 'A')).toEqual({ nodes: lineNodes('A'), activeQuestId: 'Q' });
+    expect(lineTreeFromToday(today, 'B')).toEqual({ nodes: lineNodes('B'), activeQuestId: 'Q' });
+    expect(lineTreeFromToday({ ...today, active: null }, 'B')?.activeQuestId).toBeNull();
+    expect(lineTreeFromToday(today, 'C')).toBeUndefined();
   });
 });

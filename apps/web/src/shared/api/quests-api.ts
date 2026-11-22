@@ -25,8 +25,9 @@ export function fetchTree(lineId: string) {
   return apiRequest('GET', `/lines/${encodeURIComponent(lineId)}/tree`, lineTreeResponseSchema);
 }
 
-export function fetchToday() {
-  return apiRequest('GET', '/today', todayResponseSchema);
+/** С датой сервер добавляет контракты дня — блок «На сегодня» (F-23). */
+export function fetchToday(date: string) {
+  return apiRequest('GET', `/today?date=${encodeURIComponent(date)}`, todayResponseSchema);
 }
 
 export function createLine(body: CreateLineRequest) {
