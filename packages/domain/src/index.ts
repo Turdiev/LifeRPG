@@ -1,6 +1,6 @@
-export type { Change, QuestKind, QuestNode, QuestStatus, Tree } from './types';
+export type { Change, QuestKind, QuestNode, QuestStatus, Schedule, Tree } from './types';
 export { DomainError, type DomainErrorCode } from './errors';
-export { buildTree } from './tree';
+export { buildTree, isContract, isContractDay } from './tree';
 export { progress, type Progress } from './progress';
 export {
   applyAddChild,
@@ -11,8 +11,19 @@ export {
   applyReopen,
   applyRestore,
   applyResume,
+  type CancelOptions,
   type CompleteOptions,
 } from './cascade';
+export {
+  applyFinishContract,
+  applyRemoveSchedule,
+  applySchedule,
+  contractDates,
+  defaultTerm,
+  MAX_TERM_DAYS,
+  planSchedule,
+  type SchedulePlan,
+} from './contract';
 export { canBeActive, isBranchLocked, nextOpenChild, nextQuest, suggestQuests } from './active-quest';
 export { applyChanges } from './apply-changes';
 export {

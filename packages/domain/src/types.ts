@@ -12,6 +12,17 @@ export type QuestNode = {
   title: string;
   deadline: string | null;
   completedAt: string | null;
+  /** Есть только у задания-контракта (PRD, «Контракты»). */
+  schedule: Schedule | null;
+  /** Дата дня контракта `YYYY-MM-DD`; есть только у его этапов. */
+  scheduledOn: string | null;
+};
+
+/** Маска дней недели: пн = 1, вт = 2, ср = 4 … вс = 64. Даты `YYYY-MM-DD`, конец включительно. */
+export type Schedule = {
+  weekdays: number;
+  start: string;
+  end: string;
 };
 
 /** Узлы, которых нет в списке изменений, не изменились. */

@@ -9,8 +9,10 @@ import {
   integer,
   pgEnum,
   pgTable,
+  smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
   type AnyPgColumn,
@@ -125,13 +127,31 @@ export const quests = pgTable(
     completedAt: timestamp('completed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    // Расписание контракта (v2): маска дней недели (пн = 1 … вс = 64) и срок включительно.
+    repeatWeekdays: smallint('repeat_weekdays'),
+    repeatStart: date('repeat_start', { mode: 'string' }),
+    repeatEnd: date('repeat_end', { mode: 'string' }),
+    /** Дата дня у этапа контракта. */
+    scheduledOn: date('scheduled_on', { mode: 'string' }),
   },
   (t) => [
     check('quests_line_has_no_parent', sql`(${t.kind} = 'line') = (${t.parentId} IS NULL)`),
     check('quests_pause_only_line_or_chapter', sql`${t.status} <> 'paused' OR ${t.kind} IN ('line', 'chapter')`),
+    check(
+      'quests_contract_schedule',
+      sql`num_nulls(${t.repeatWeekdays}, ${t.repeatStart}, ${t.repeatEnd}) IN (0, 3)
+        AND (${t.repeatWeekdays} IS NULL OR (
+          ${t.kind} = 'quest' AND ${t.repeatWeekdays} BETWEEN 1 AND 127
+          AND ${t.repeatEnd} >= ${t.repeatStart} AND ${t.repeatEnd} - ${t.repeatStart} <= 365))`,
+    ),
+    check('quests_scheduled_only_step', sql`${t.scheduledOn} IS NULL OR ${t.kind} = 'step'`),
     index('quests_line_idx').on(t.lineId),
     index('quests_children_idx').on(t.parentId, t.position),
     index('quests_journal_idx').on(t.userId, t.kind, t.status),
+    // Один день на дату: повтор PUT расписания из очереди без сети не создаст дубль.
+    uniqueIndex('quests_contract_day_idx')
+      .on(t.parentId, t.scheduledOn)
+      .where(sql`${t.scheduledOn} IS NOT NULL`),
   ],
 );
 

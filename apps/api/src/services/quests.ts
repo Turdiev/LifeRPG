@@ -4,13 +4,17 @@ import {
   applyChanges,
   applyComplete,
   applyDelete,
+  applyFinishContract,
   applyPause,
   applyReopen,
   applyRestore,
   applyResume,
   DomainError,
   isBranchLocked,
+  isContract,
+  isContractDay,
   kindAtDepth,
+  type CancelOptions,
   type Change,
   type CompleteOptions,
   type Tree,
@@ -37,18 +41,21 @@ import {
   type QuestRecord,
 } from '../db/quests-repository';
 import { getActiveQuestId } from '../db/settings-repository';
+import { ValidationError } from '../errors';
 import { reconcileActiveQuest } from './active-quest';
 import { lockLineOf } from './line-lock';
 
-export type StatusAction = 'complete' | 'reopen' | 'pause' | 'resume' | 'cancel' | 'restore';
+export type StatusAction = 'complete' | 'reopen' | 'pause' | 'resume' | 'cancel' | 'restore' | 'finish';
+type StatusOptions = CompleteOptions & CancelOptions;
 
-const statusActions: Record<StatusAction, (tree: Tree, id: string, now: string, options: CompleteOptions) => Change[]> = {
+const statusActions: Record<StatusAction, (tree: Tree, id: string, now: string, options: StatusOptions) => Change[]> = {
   complete: applyComplete,
   reopen: applyReopen,
   pause: applyPause,
   resume: applyResume,
   cancel: applyCancel,
   restore: applyRestore,
+  finish: applyFinishContract,
 };
 
 export async function changeStatus(
@@ -56,10 +63,14 @@ export async function changeStatus(
   userId: string,
   questId: string,
   action: StatusAction,
-  options: CompleteOptions = {},
+  options: StatusOptions = {},
 ): Promise<MutationResponse> {
   return db.transaction(async (tx) => {
-    const { nodes, tree } = await lockLineOf(tx, userId, questId);
+    const { quest, nodes, tree } = await lockLineOf(tx, userId, questId);
+    // Старый закешированный клиент не присылает `today` и не должен отметить день вслепую (tech-spec, правило 9).
+    if ((action === 'complete' || action === 'cancel') && isContractDay(quest) && options.today === undefined) {
+      throw new ValidationError('A contract day needs today');
+    }
     const changes = statusActions[action](tree, questId, new Date().toISOString(), options);
     await updateStatuses(tx, userId, changes);
     return respond(tx, userId, applyChanges(nodes, changes), ids(changes));
@@ -69,6 +80,8 @@ export async function changeStatus(
 export async function createQuest(db: Db, userId: string, body: CreateQuestRequest): Promise<MutationResponse> {
   return db.transaction(async (tx) => {
     const { quest: parent, nodes, tree } = await lockLineOf(tx, userId, body.parentId);
+    // Дни контракта создаёт только расписание (tech-spec, правило 9): здесь и ниже — ручные эндпоинты.
+    if (isContract(parent)) throw new DomainError('invalid_parent');
     const lastSibling = tree.children.get(parent.id)?.at(-1);
     const now = new Date().toISOString();
     const record: QuestRecord = {
@@ -81,6 +94,8 @@ export async function createQuest(db: Db, userId: string, body: CreateQuestReque
       title: body.title,
       description: body.description ?? null,
       deadline: body.deadline ?? null,
+      schedule: null,
+      scheduledOn: null,
       completedAt: null,
       createdAt: now,
       updatedAt: now,
@@ -99,6 +114,7 @@ type BatchDraft = { title: string; children: readonly BatchDraft[] };
 export async function createBatch(db: Db, userId: string, body: CreateBatchRequest): Promise<MutationResponse> {
   return db.transaction(async (tx) => {
     const { quest: parent, nodes, tree } = await lockLineOf(tx, userId, body.parentId);
+    if (isContract(parent)) throw new DomainError('invalid_parent');
     const records: QuestRecord[] = [];
     const updatedAt = new Date().toISOString();
 
@@ -117,6 +133,8 @@ export async function createBatch(db: Db, userId: string, body: CreateBatchReque
           title: draft.title,
           description: null,
           deadline: null,
+          schedule: null,
+          scheduledOn: null,
           completedAt: null,
           createdAt: updatedAt,
           updatedAt,
@@ -146,8 +164,11 @@ export async function updateQuest(
   body: UpdateQuestRequest,
 ): Promise<MutationResponse> {
   return db.transaction(async (tx) => {
-    const { tree } = await lockLineOf(tx, userId, questId);
+    const { quest, tree } = await lockLineOf(tx, userId, questId);
     if (isBranchLocked(tree, questId)) throw new DomainError('branch_locked');
+    // Название дня — его дата, а срок контракта заменяет дедлайн; описание менять можно.
+    const touchesDate = body.deadline !== undefined || (isContractDay(quest) && body.title !== undefined);
+    if (touchesDate && (isContract(quest) || isContractDay(quest))) throw new DomainError('invalid_transition');
     const updated = await updateFields(tx, userId, questId, body);
     return { changed: [toQuest(updated)], activeQuestId: await getActiveQuestId(tx, userId) };
   });
@@ -162,7 +183,8 @@ export async function moveQuest(
   return db.transaction(async (tx) => {
     const { quest, tree } = await lockLineOf(tx, userId, questId);
     // Порядок линий в журнале — отдельная задача; здесь только «братья» внутри родителя (F-05).
-    if (quest.parentId === null) throw new DomainError('invalid_transition');
+    // Порядок дней контракта — порядок дат.
+    if (quest.parentId === null || isContractDay(quest)) throw new DomainError('invalid_transition');
     if (isBranchLocked(tree, questId)) throw new DomainError('branch_locked');
 
     const siblings = (tree.children.get(quest.parentId) ?? []).filter((node) => node.id !== questId);
@@ -182,6 +204,7 @@ export async function moveQuest(
 export async function deleteQuest(db: Db, userId: string, questId: string): Promise<MutationResponse> {
   return db.transaction(async (tx) => {
     const { quest, tree } = await lockLineOf(tx, userId, questId);
+    if (isContractDay(quest)) throw new DomainError('invalid_transition');
     const changes = applyDelete(tree, questId, new Date().toISOString());
     await deleteQuestRow(tx, userId, questId);
     if (questId !== quest.lineId) await touchQuest(tx, userId, quest.lineId);
@@ -193,11 +216,11 @@ export async function deleteQuest(db: Db, userId: string, questId: string): Prom
   });
 }
 
-function ids(changes: readonly Change[]): string[] {
+export function ids(changes: readonly Change[]): string[] {
   return changes.map((change) => change.id);
 }
 
-async function respond(
+export async function respond(
   tx: Tx,
   userId: string,
   lineNodes: readonly QuestRecord[],

@@ -16,18 +16,28 @@ import { InlineAdd } from './InlineAdd';
 import { LineActionsContext, type LineActions } from './line-actions';
 import { applyStatusLocally, buildLineView, descendantCount, withTempIds, type TreeNode } from './line-model';
 import { LineBanner } from './LineBanner';
-import { CompleteAllDialog, DeleteNodeDialog } from './LineDialogs';
+import { CompleteAllDialog, DeleteNodeDialog, FinishContractDialog } from './LineDialogs';
 import { NodeDetailsSheet } from './NodeDetailsSheet';
 import { NodeMenu } from './NodeMenu';
 import { PastePreviewDialog } from './PastePreviewDialog';
 import { QuestRow } from './QuestRow';
 import { SegmentedProgress } from './SegmentedProgress';
-import { useCreateBatch, useCreateNode, useDeleteNode, useLineTree, useNodeStatus, useSetActiveQuest, useUpdateNode } from './use-line';
+import {
+  useCreateBatch,
+  useCreateNode,
+  useDeleteNode,
+  useLineTree,
+  useNodeStatus,
+  useSchedule,
+  useSetActiveQuest,
+  useUpdateNode,
+} from './use-line';
 
 export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: string | undefined }) {
   const navigate = useNavigate({ from: '/line/$lineId' });
   const tree = useLineTree(lineId);
   const status = useNodeStatus(lineId);
+  const schedule = useSchedule(lineId);
   const createNode = useCreateNode(lineId);
   const createBatch = useCreateBatch(lineId);
   const updateNode = useUpdateNode(lineId);
@@ -46,6 +56,7 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
   const [expandedQuests, setExpandedQuests] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState<TreeNode | null>(null);
   const [completingAll, setCompletingAll] = useState<TreeNode | null>(null);
+  const [finishing, setFinishing] = useState<TreeNode | null>(null);
   const [pasted, setPasted] = useState<{
     parentId: string;
     kind: DraftKind;
@@ -66,7 +77,10 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
   const complete = (node: TreeNode, withChildren: boolean) => {
     if (!tree.data) return;
     const before = new Map(tree.data.nodes.map((n) => [n.id, n.status]));
-    const after = applyStatusLocally(tree.data, node.id, 'complete', new Date().toISOString(), { withChildren });
+    const after = applyStatusLocally(tree.data, node.id, 'complete', new Date().toISOString(), {
+      withChildren,
+      today,
+    });
     const closed = after.nodes.filter((n) => n.status === 'done' && before.get(n.id) !== 'done').map((n) => n.id);
     setJustDone((set) => new Set([...set, ...closed]));
     status.mutate({ node, action: 'complete', withChildren });
@@ -89,6 +103,7 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
     // Несохранённый узел сервер ещё не знает: его детали откроются после ответа.
     openDetails: (id) => !id.startsWith('temp-') && void navigate({ search: { quest: id } }),
     askDelete: (node) => setDeleting(node),
+    askFinish: (node) => setFinishing(node),
   };
 
   if (tree.isPending) return showSkeleton ? <LineSkeleton /> : null;
@@ -210,6 +225,8 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
         onClose={() => void navigate({ search: {}, replace: true })}
         onSave={(id, body) => updateNode.mutate({ id, body })}
         onMakeActive={(questId) => setActive.mutate({ questId })}
+        onSchedule={(id, body) => schedule.mutate({ id, body, enabling: detailsNode?.schedule === null })}
+        scheduling={schedule.isPending}
       />
       {deleting && (
         <DeleteNodeDialog
@@ -249,6 +266,17 @@ export function LinePage({ lineId, detailsId }: { lineId: string; detailsId: str
           onConfirm={() => {
             complete(completingAll, true);
             setCompletingAll(null);
+          }}
+        />
+      )}
+      {finishing && (
+        <FinishContractDialog
+          marked={tree.data.nodes.filter((n) => n.parentId === finishing.id && n.status === 'done').length}
+          total={tree.data.nodes.filter((n) => n.parentId === finishing.id && n.status !== 'cancelled').length}
+          onOpenChange={(open) => !open && setFinishing(null)}
+          onConfirm={() => {
+            status.mutate({ node: finishing, action: 'finish' });
+            setFinishing(null);
           }}
         />
       )}

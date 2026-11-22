@@ -9,6 +9,7 @@ export const errorCodeSchema = z.enum([
   'has_open_children',
   'invalid_parent',
   'invalid_transition',
+  'not_due',
   'payload_too_large',
   'internal_error',
 ]);

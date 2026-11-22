@@ -4,15 +4,18 @@ import {
   applyChanges,
   applyComplete,
   applyDelete,
+  applyFinishContract,
   applyPause,
   applyReopen,
   applyRestore,
   applyResume,
   buildTree,
   canBeActive,
+  DomainError,
   isBranchLocked,
   kindAtDepth,
   progress,
+  type CancelOptions,
   type Change,
   type CompleteOptions,
   type DraftKind,
@@ -23,7 +26,9 @@ import {
 import type { LineTreeResponse, MutationResponse } from '@life-rpg/shared';
 
 export type TreeNode = LineTreeResponse['nodes'][number];
-export type NodeAction = 'complete' | 'reopen' | 'pause' | 'resume' | 'cancel' | 'restore';
+export type NodeAction = 'complete' | 'reopen' | 'pause' | 'resume' | 'cancel' | 'restore' | 'finish';
+/** `today` нужен отметке и отмене дня контракта; остальным узлам домен его не спрашивает. */
+export type StatusOptions = CompleteOptions & CancelOptions;
 
 /** Выполненные элементы уровня сворачиваются в строку «Выполнено: N» внизу группы (docs/ux.md). */
 export type Group<T> = { items: T[]; done: T[] };
@@ -133,13 +138,14 @@ function directQuestsProgress(tree: Tree, lineId: string): Progress {
     .reduce((sum, p) => ({ done: sum.done + p.done, total: sum.total + p.total }), { done: 0, total: 0 });
 }
 
-const actions: Record<NodeAction, (tree: Tree, id: string, now: string, options: CompleteOptions) => Change[]> = {
+const actions: Record<NodeAction, (tree: Tree, id: string, now: string, options: StatusOptions) => Change[]> = {
   complete: applyComplete,
   reopen: applyReopen,
   pause: applyPause,
   resume: applyResume,
   cancel: applyCancel,
   restore: applyRestore,
+  finish: applyFinishContract,
 };
 
 /**
@@ -151,10 +157,24 @@ export function applyStatusLocally(
   id: string,
   action: NodeAction,
   now: string,
-  options: CompleteOptions = {},
+  options: StatusOptions = {},
 ): LineTreeResponse {
   const changes = actions[action](buildTree(data.nodes), id, now, options);
   return withActiveChecked({ ...data, nodes: applyChanges(data.nodes, changes) });
+}
+
+/**
+ * Разрешает ли домен действие: кнопки показываются по тем же правилам, по которым сервер ответил бы
+ * 409, — без второй копии правил в интерфейсе.
+ */
+export function allows(run: () => unknown): boolean {
+  try {
+    run();
+    return true;
+  } catch (error) {
+    if (error instanceof DomainError) return false;
+    throw error;
+  }
 }
 
 export type Draft = { id: string; parentId: string; kind: DraftKind; title: string };
@@ -177,6 +197,8 @@ function pendingNode(draft: Draft, now: string): TreeNode {
     position: `~${String((pendingSeq += 1)).padStart(8, '0')}`,
     description: null,
     deadline: null,
+    schedule: null,
+    scheduledOn: null,
     completedAt: null,
     createdAt: now,
     progress: { done: 0, total: 0 },

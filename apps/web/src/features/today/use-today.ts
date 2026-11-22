@@ -1,30 +1,37 @@
 import type { LineTreeResponse, TodayResponse } from '@life-rpg/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/shared/api/keys';
 import { fetchToday, fetchTree, setActiveQuest } from '@/shared/api/quests-api';
 import { ru } from '@/shared/strings/ru';
+import { lineTreeFromToday } from './today-model';
 
-export function useToday() {
-  return useQuery({ queryKey: queryKeys.today, queryFn: fetchToday });
+/** После полуночи ключ новый: пока он грузится, экран держит прежний ответ, а не мигает скелетоном. */
+export function useToday(date: string) {
+  return useQuery({
+    queryKey: queryKeys.todayOn(date),
+    queryFn: () => fetchToday(date),
+    placeholderData: keepPreviousData,
+  });
 }
 
 /**
- * Дерево линии активного квеста — в общем кеше `['tree', lineId]`, а не в `['today']`: так
- * этапы отмечаются теми же оптимистичными мутациями, что и на экране линии (`useNodeStatus`).
- * Первые данные берутся из ответа `GET /today`, без второго запроса; свежесть отсчитывается
- * от его загрузки (TanStack Query, «Initial Query Data»).
+ * Дерево линии активного квеста или контракта дня — в общем кеше `['tree', lineId]`, а не в
+ * `['today']`: так этапы и дни отмечаются теми же оптимистичными мутациями, что и на экране линии
+ * (`useNodeStatus`). Первые данные берутся из ответа `GET /today`, без второго запроса; свежесть
+ * отсчитывается от его загрузки (TanStack Query, «Initial Query Data»).
  */
-export function useActiveLineTree(lineId: string) {
+export function useTodayLineTree(lineId: string, date: string) {
   const queryClient = useQueryClient();
+  const key = queryKeys.todayOn(date);
   return useQuery({
     queryKey: queryKeys.tree(lineId),
     queryFn: () => fetchTree(lineId),
     initialData: (): LineTreeResponse | undefined => {
-      const active = queryClient.getQueryData<TodayResponse>(queryKeys.today)?.active;
-      return active?.lineId === lineId ? { nodes: active.nodes, activeQuestId: active.questId } : undefined;
+      const today = queryClient.getQueryData<TodayResponse>(key);
+      return today && lineTreeFromToday(today, lineId);
     },
-    initialDataUpdatedAt: () => queryClient.getQueryState(queryKeys.today)?.dataUpdatedAt,
+    initialDataUpdatedAt: () => queryClient.getQueryState(key)?.dataUpdatedAt,
   });
 }
 

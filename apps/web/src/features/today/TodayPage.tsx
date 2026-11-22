@@ -4,6 +4,7 @@ import { LineFormSheet } from '@/features/journal/LineFormSheet';
 import type { TreeNode } from '@/features/line/line-model';
 import { useNodeStatus } from '@/features/line/use-line';
 import { useDelayedFlag } from '@/shared/hooks/use-delayed-flag';
+import { useLocalDate } from '@/shared/hooks/use-local-date';
 import { useIsDesktop } from '@/shared/hooks/use-media-query';
 import { ru } from '@/shared/strings/ru';
 import { Button } from '@/shared/ui/button';
@@ -13,12 +14,16 @@ import { QuestCard } from './QuestCard';
 import { NextQuestCard } from './NextQuestCard';
 import { buildTodayView, closedByComplete, greeting, nextQuestView, todayState, type TodayState } from './today-model';
 import { GoalLink, TodayLines } from './TodayLines';
-import { useActiveLineTree, useTakeQuest, useToday } from './use-today';
+import { TodayContracts } from './TodayContracts';
+import { useTakeQuest, useToday, useTodayLineTree } from './use-today';
 
 type QuestRef = { questId: string; lineId: string };
 
 export function TodayPage() {
-  const today = useToday();
+  // Дата устройства: контракты дня считаются по ней (tech-spec, «Контракты»), а после полуночи
+  // новый ключ кеша перезапрашивает экран.
+  const date = useLocalDate();
+  const today = useToday(date);
   const take = useTakeQuest();
   const showSkeleton = useDelayedFlag(today.isPending, 300);
   // Квест, закрытый на этом экране: сервер снимает его с активных, а карточка остаётся
@@ -82,6 +87,7 @@ export function TodayPage() {
         <ActiveQuest
           key={shown.questId}
           quest={shown}
+          date={date}
           isActive={active?.questId === shown.questId}
           closedHere={closed?.questId === shown.questId}
           onClosed={() => setClosed(shown)}
@@ -93,6 +99,10 @@ export function TodayPage() {
       ) : (
         noActive
       )}
+
+      {/* Контракты дня — между прогрессом цели и другими целями (docs/ux.md, «Блок «На сегодня»»). */}
+      {/* Вчерашний ответ, пока грузится новый день, контракты не показывает: отметка ушла бы не тому дню. */}
+      {data.contracts && !today.isPlaceholderData && <TodayContracts items={data.contracts.items} date={date} />}
 
       {/* Цель карточки уже видна под ней строкой прогресса — в списке её не повторяем. */}
       <TodayLines
@@ -120,6 +130,8 @@ function TodayHeader() {
 
 type ActiveQuestProps = {
   quest: QuestRef;
+  /** Дата устройства: по ней дерево линии берётся из ответа «Сегодня». */
+  date: string;
   /** Сервер считает квест активным (ответ `/today`). */
   isActive: boolean;
   /** Квест закрыт отметкой на этом экране. */
@@ -134,8 +146,8 @@ type ActiveQuestProps = {
   noActive: ReactNode;
 };
 
-function ActiveQuest({ quest, isActive, closedHere, onClosed, takenHere, takingId, onTake, noActive }: ActiveQuestProps) {
-  const tree = useActiveLineTree(quest.lineId);
+function ActiveQuest({ quest, date, isActive, closedHere, onClosed, takenHere, takingId, onTake, noActive }: ActiveQuestProps) {
+  const tree = useTodayLineTree(quest.lineId, date);
   const status = useNodeStatus(quest.lineId);
   // Отмеченное здесь остаётся на месте с галочкой «до следующего открытия экрана» (docs/ux.md,
   // «Решения по UX»). На телефоне экран и так закрывается при переходе; на компьютере колонка

@@ -3,8 +3,13 @@ import { cn } from '@/shared/lib/utils';
 import { ru } from '@/shared/strings/ru';
 import { ChevronRightIcon } from '@/shared/ui/icons';
 
-/** Выполненные элементы уровня свёрнуты в строку внизу группы: история видна, но не мешает (решение PRD). */
-export function DoneGroup({ count, className, children }: { count: number; className?: string; children: ReactNode }) {
+type DoneGroupProps = { count: number; label?: string; className?: string; children: ReactNode };
+
+/**
+ * Выполненные элементы уровня свёрнуты в строку внизу группы: история видна, но не мешает (решение PRD).
+ * `label` — своя подпись: у контракта так же свёрнуты «Не отмечено» и «Не засчитано».
+ */
+export function DoneGroup({ count, label, className, children }: DoneGroupProps) {
   const [open, setOpen] = useState(false);
   if (count === 0) return null;
 
@@ -20,7 +25,7 @@ export function DoneGroup({ count, className, children }: { count: number; class
         )}
       >
         <ChevronRightIcon className={cn('size-4 transition-transform', open && 'rotate-90')} />
-        {ru.line.doneGroup(count)}
+        {label ?? ru.line.doneGroup(count)}
       </button>
       {open && children}
     </div>

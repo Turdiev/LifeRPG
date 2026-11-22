@@ -1,10 +1,13 @@
-import { ancestorsOf, childrenOf, getNode, isLocked } from './tree';
+import { ancestorsOf, childrenOf, getNode, isContract, isLocked } from './tree';
 import type { QuestNode, Tree } from './types';
 
-/** Неизвестный id (например, удалённое задание) активным быть не может. */
+/**
+ * Неизвестный id (например, удалённое задание) активным быть не может. Контракт тоже: у него своё
+ * место на «Сегодня», а «следующим этапом» стал бы самый старый пропуск (PRD, «Контракты», правило 8).
+ */
 export function canBeActive(tree: Tree, questId: string): boolean {
   const node = tree.nodes.get(questId);
-  if (!node || node.kind !== 'quest' || node.status !== 'open') return false;
+  if (!node || node.kind !== 'quest' || node.status !== 'open' || isContract(node)) return false;
   return !ancestorsOf(tree, questId).some(isLocked);
 }
 

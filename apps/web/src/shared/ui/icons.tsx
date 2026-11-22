@@ -82,6 +82,15 @@ export const CalendarIcon = icon(
   </>,
 );
 export const PauseIcon = icon('PauseIcon', <path d="M9 5v14M15 5v14" />);
+/** Контракт — свиток с печатью (docs/ux.md, «Иконки уровней», v2). */
+export const ScrollIcon = icon(
+  'ScrollIcon',
+  <>
+    <path d="M7 4h10a2 2 0 012 2v12M7 4a2 2 0 00-2 2v2h4M7 4a2 2 0 012 2v12a2 2 0 002 2h8a2 2 0 002-2v-1h-8" />
+    <circle cx="14.5" cy="10.5" r="2.5" />
+    <path d="M13.5 13l-.5 3 1.5-1 1.5 1-.5-3" />
+  </>,
+);
 export const CloseIcon = icon('CloseIcon', <path d="M7 7l10 10M17 7L7 17" />);
 export const SparksIcon = icon(
   'SparksIcon',

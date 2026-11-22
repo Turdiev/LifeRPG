@@ -18,6 +18,8 @@ function tree(rows: Row[]): LineTreeResponse {
     title: `title ${id}`,
     description: null,
     deadline: null,
+    schedule: null,
+    scheduledOn: null,
     completedAt: status === 'done' ? DONE : null,
     createdAt: CREATED,
     progress: { done: 0, total: 0 },

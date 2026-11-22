@@ -1,7 +1,7 @@
 // Каскады статусов. Функции чистые: дерево не меняют, а возвращают изменения,
 // которые вызывающий должен сохранить, или бросают DomainError.
 import { DomainError } from './errors';
-import { ancestorsOf, buildTree, childrenOf, getNode, isLocked } from './tree';
+import { ancestorsOf, buildTree, childrenOf, getNode, isContract, isContractDay, isLocked } from './tree';
 import type { Change, QuestKind, QuestNode, QuestStatus, Tree } from './types';
 
 const ALLOWED_CHILDREN: Record<QuestKind, readonly QuestKind[]> = {
@@ -14,13 +14,25 @@ const ALLOWED_CHILDREN: Record<QuestKind, readonly QuestKind[]> = {
 export type CompleteOptions = {
   /** Пользователь подтвердил диалог «Отметить все этапы выполненными?». */
   withChildren?: boolean;
+  /** Дата устройства `YYYY-MM-DD`; нужна дню контракта, чтобы не отметить его вперёд. */
+  today?: string;
 };
 
-/** Глава и линия отмечаются вручную, только пока в них нет неотменённых детей. */
+export type CancelOptions = {
+  /** Дата устройства `YYYY-MM-DD`; нужна дню контракта, чтобы не отменить его вперёд. */
+  today?: string;
+};
+
+/**
+ * Глава и линия отмечаются вручную, только пока в них нет неотменённых детей. Контракт целиком
+ * не отмечается: вместо вопроса «Отметить все этапы?» его завершают (PRD, «Контракты», правило 5).
+ */
 export function applyComplete(tree: Tree, id: string, now: string, options: CompleteOptions = {}): Change[] {
   const node = getNode(tree, id);
   assertUnlocked(tree, node);
+  if (isContract(node)) throw new DomainError('invalid_transition');
   if (node.status === 'done') return [];
+  if (isContractDay(node) && node.scheduledOn > requireToday(options.today)) throw new DomainError('not_due');
 
   const draft = new Draft(tree);
   const children = draft.liveChildren(id);
@@ -35,10 +47,14 @@ export function applyComplete(tree: Tree, id: string, now: string, options: Comp
   return draft.changes(now);
 }
 
-/** Открывает и выполненных потомков: иначе подъём статуса сразу закрыл бы узел снова. */
+/**
+ * Открывает и выполненных потомков: иначе подъём статуса сразу закрыл бы узел снова. У контракта это
+ * стёрло бы все отметки дней разом, поэтому снимают отметку с дня (PRD, «Контракты», правило 5).
+ */
 export function applyReopen(tree: Tree, id: string, now: string): Change[] {
   const node = getNode(tree, id);
   assertUnlocked(tree, node);
+  if (isContract(node)) throw new DomainError('invalid_transition');
   if (node.status !== 'done') return [];
 
   const draft = new Draft(tree);
@@ -93,13 +109,22 @@ export function applyResume(tree: Tree, id: string, now: string): Change[] {
   return draft.changes(now);
 }
 
-/** Ветка выпадает из прогресса родителя; статусы потомков не меняются. */
-export function applyCancel(tree: Tree, id: string, now: string): Change[] {
+/**
+ * Ветка выпадает из прогресса родителя; статусы потомков не меняются. Будущий день контракта
+ * не отменяют — меняют расписание; последний неотменённый тоже: иначе контракт молча закрылся бы
+ * без итога (PRD, «Контракты», правило 3).
+ */
+export function applyCancel(tree: Tree, id: string, now: string, options: CancelOptions = {}): Change[] {
   const node = getNode(tree, id);
   assertAncestorsUnlocked(tree, node);
   if (node.status === 'cancelled') return [];
 
   const draft = new Draft(tree);
+  if (isContractDay(node)) {
+    if (node.scheduledOn > requireToday(options.today)) throw new DomainError('invalid_transition');
+    const otherLiveDays = draft.liveChildren(node.parentId!).filter((child) => child.id !== id);
+    if (otherLiveDays.length === 0) throw new DomainError('invalid_transition');
+  }
   draft.set(id, 'cancelled');
   draft.recomputeAncestors(id);
   return draft.changes(now);
@@ -125,7 +150,8 @@ export function applyDelete(tree: Tree, id: string, now: string): Change[] {
   return draft.changes(now);
 }
 
-function assertUnlocked(tree: Tree, node: QuestNode): void {
+// Экспорт для contract.ts; из index.ts наружу не выходит.
+export function assertUnlocked(tree: Tree, node: QuestNode): void {
   if (isLocked(node)) throw new DomainError('branch_locked');
   assertAncestorsUnlocked(tree, node);
 }
@@ -134,8 +160,14 @@ function assertAncestorsUnlocked(tree: Tree, node: QuestNode): void {
   if (ancestorsOf(tree, node.id).some(isLocked)) throw new DomainError('branch_locked');
 }
 
+/** API проверяет `today` до домена (`400`), так что без него сюда доходит только ошибка в коде. */
+function requireToday(today: string | undefined): string {
+  if (today === undefined) throw new Error('A contract day needs today');
+  return today;
+}
+
 /** Черновик статусов поверх неизменного дерева; `changes` отдаёт разницу с исходным. */
-class Draft {
+export class Draft {
   private readonly tree: Tree;
   private readonly statuses = new Map<string, QuestStatus>();
   private readonly removed = new Set<string>();

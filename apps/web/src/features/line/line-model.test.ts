@@ -2,6 +2,7 @@ import { DomainError } from '@life-rpg/domain';
 import type { LineTreeResponse, MutationResponse, Quest } from '@life-rpg/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  allows,
   applyStatusLocally,
   buildLineView,
   descendantCount,
@@ -26,6 +27,8 @@ function tree(rows: [string, string | null, Quest['kind'], Quest['status']?][], 
     title: id,
     description: null,
     deadline: null,
+    schedule: null,
+    scheduledOn: null,
     completedAt: status === 'done' ? '2026-11-01T00:00:00.000Z' : null,
     createdAt: '2026-10-01T00:00:00.000Z',
     progress: { done: 0, total: 0 },
@@ -196,6 +199,43 @@ describe('applyStatusLocally', () => {
   });
 });
 
+describe('contracts locally', () => {
+  const TODAY = '2026-12-02';
+  const contract = () => {
+    const data = tree([
+      ['L', null, 'line'],
+      ['K', 'L', 'quest'],
+      ['D1', 'K', 'step'],
+      ['D2', 'K', 'step'],
+    ]);
+    const dates: Record<string, string> = { D1: TODAY, D2: '2026-12-04' };
+    return {
+      ...data,
+      nodes: data.nodes.map((node) =>
+        node.id === 'K'
+          ? { ...node, schedule: { weekdays: 127, start: TODAY, end: '2026-12-04' } }
+          : { ...node, scheduledOn: dates[node.id] ?? null },
+      ),
+    };
+  };
+
+  it('marks a day with today and finishes the contract through the domain', () => {
+    const marked = applyStatusLocally(contract(), 'D1', 'complete', NOW, { today: TODAY });
+    const finished = applyStatusLocally(marked, 'K', 'finish', NOW);
+
+    expect(statusOf(marked, 'D1')).toBe('done');
+    expect(['D2', 'K', 'L'].map((id) => statusOf(finished, id))).toEqual(['cancelled', 'done', 'done']);
+  });
+
+  it('tells which domain actions are allowed without throwing', () => {
+    const data = contract();
+
+    expect(allows(() => applyStatusLocally(data, 'D1', 'complete', NOW, { today: TODAY }))).toBe(true);
+    expect(allows(() => applyStatusLocally(data, 'D2', 'complete', NOW, { today: TODAY }))).toBe(false);
+    expect(allows(() => applyStatusLocally(data, 'K', 'finish', NOW))).toBe(false);
+  });
+});
+
 describe('insertLocally', () => {
   it('appends a pending node after its siblings and reopens the done parent', () => {
     const data = tree([
@@ -224,6 +264,8 @@ describe('mergeResponse', () => {
       title: 'x',
       description: null,
       deadline: null,
+      schedule: null,
+      scheduledOn: null,
       completedAt: null,
       createdAt: '2026-10-01T00:00:00.000Z',
     };

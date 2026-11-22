@@ -7,6 +7,29 @@ const title = z.string().trim().min(1).max(120);
 const description = z.string().trim().max(10_000);
 const deadline = z.iso.date();
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Как CHECK `quests_contract_schedule`: 365 дней между началом и концом — это 366 дней-этапов. */
+const MAX_TERM_DAYS = 365;
+
+const scheduleFields = {
+  /** Маска дней недели: пн = 1, вт = 2, ср = 4 … вс = 64. */
+  weekdays: z.number().int().min(1).max(127),
+  start: deadline,
+  /** Включительно. */
+  end: deadline,
+};
+export const scheduleSchema = z.object(scheduleFields);
+
+/**
+ * Дата устройства «сегодня» (tech-spec, «Контракты»). Отклоняется только дата позже завтрашней по UTC:
+ * ни один часовой пояс не опережает UTC на сутки. Нижней границы нет — отметка из очереди без сети
+ * может прийти через несколько дней со своей датой.
+ */
+export const todaySchema = deadline.refine(
+  (date) => date <= new Date(Date.now() + DAY_MS).toISOString().slice(0, 10),
+  { message: 'The date is later than tomorrow' },
+);
+
 export const questSchema = z.object({
   id: z.uuid(),
   parentId: z.uuid().nullable(),
@@ -16,6 +39,10 @@ export const questSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   deadline: deadline.nullable(),
+  /** Есть только у задания-контракта (v2). */
+  schedule: scheduleSchema.nullable(),
+  /** Дата дня контракта; есть только у его этапов. */
+  scheduledOn: deadline.nullable(),
   completedAt: z.iso.datetime().nullable(),
   /** Для экрана завершения: «за N дней» от создания до закрытия главы или цели (F-16). */
   createdAt: z.iso.datetime(),
@@ -83,9 +110,23 @@ export const moveQuestRequestSchema = z.strictObject({
 });
 export type MoveQuestRequest = z.infer<typeof moveQuestRequestSchema>;
 
+/** `today` обязателен для дня контракта; проверяет сервер — он знает вид узла. */
 export const completeQuestRequestSchema = z.strictObject({
   withChildren: z.boolean().optional(),
+  today: todaySchema.optional(),
 });
+
+export const cancelQuestRequestSchema = z.strictObject({
+  today: todaySchema.optional(),
+});
+
+export const putScheduleRequestSchema = z
+  .strictObject({ ...scheduleFields, today: todaySchema })
+  .refine(({ start, end }) => end >= start && (Date.parse(end) - Date.parse(start)) / DAY_MS <= MAX_TERM_DAYS, {
+    message: `The term must not end before it starts or last more than ${MAX_TERM_DAYS + 1} days`,
+    path: ['end'],
+  });
+export type PutScheduleRequest = z.infer<typeof putScheduleRequestSchema>;
 
 export const setActiveQuestRequestSchema = z.strictObject({
   questId: z.uuid().nullable(),
@@ -134,8 +175,27 @@ export const mutationResponseSchema = z.object({
 });
 export type MutationResponse = z.infer<typeof mutationResponseSchema>;
 
+/** Изменение и снятие расписания удаляют дни: клиент убирает их из кеша по `removed`. */
+export const scheduleResponseSchema = mutationResponseSchema.extend({ removed: z.array(z.uuid()) });
+export type ScheduleResponse = z.infer<typeof scheduleResponseSchema>;
+
 /** Предложение «Выбери квест»: путь к линии нужен карточке, чтобы было понятно, из какой цели задание. */
 export const suggestionSchema = questRefSchema.extend({ lineId: z.uuid(), lineTitle: z.string() });
+
+export const todayQuerySchema = z.strictObject({ date: todaySchema.optional() });
+
+/** Строка блока «На сегодня» (v2, F-23). */
+export const todayContractSchema = z.object({
+  questId: z.uuid(),
+  title: z.string(),
+  /** День на эту дату; `null` у контракта с вышедшим сроком. */
+  dayId: z.uuid().nullable(),
+  lineId: z.uuid(),
+  /** «Линия › Глава»: предки контракта начиная с линии. */
+  path: z.array(questRefSchema),
+  progress: progressSchema,
+  expired: z.boolean(),
+});
 
 /**
  * Экран «Сегодня» одним запросом. `active.nodes` — всё дерево линии активного квеста в форме
@@ -155,5 +215,15 @@ export const todayResponseSchema = z.object({
   suggestions: z.array(suggestionSchema),
   /** Отличают «целей нет» от «все цели на паузе» и «в работе ничего нет». */
   counts: linesResponseSchema.shape.counts,
+  /**
+   * Только с `?date=`. Контракты в порядке журнала, внутри линии — по дереву, с вышедшим сроком — в конце;
+   * `lines` — деревья их линий в форме `active.nodes`, чтобы клиент отмечал дни оптимистично.
+   */
+  contracts: z
+    .object({
+      items: z.array(todayContractSchema),
+      lines: z.array(z.object({ lineId: z.uuid(), nodes: lineTreeResponseSchema.shape.nodes })),
+    })
+    .optional(),
 });
 export type TodayResponse = z.infer<typeof todayResponseSchema>;

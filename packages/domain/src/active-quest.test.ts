@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { canBeActive, isBranchLocked, nextOpenChild, nextQuest, suggestQuests } from './active-quest';
-import { chapter, line, makeTree, quest, step } from './testing';
+import { chapter, contract, day, line, makeTree, quest, step } from './testing';
 
 describe('canBeActive', () => {
   const tree = makeTree(
@@ -209,5 +209,21 @@ describe('suggestQuests', () => {
     expect(suggestQuests(lines, 3)).toEqual(['B1']);
     expect(suggestQuests([makeTree(line('Empty'))], 3)).toEqual([]);
     expect(suggestQuests([], 3)).toEqual([]);
+  });
+});
+
+describe('contracts and the active quest (contract rule 8)', () => {
+  const schedule = { weekdays: 1, start: '2026-11-30', end: '2026-12-07' };
+  const tree = makeTree(
+    line('L', [chapter('C', [quest('Q1'), contract('K', schedule, [day('2026-11-30'), day('2026-12-07')]), quest('Q3')])]),
+  );
+
+  it('never lets a contract be the active quest', () => {
+    expect(canBeActive(tree, 'K')).toBe(false);
+  });
+
+  it('skips a contract when suggesting the next quest', () => {
+    expect(nextQuest(tree, 'Q1')).toBe('Q3');
+    expect(suggestQuests([tree], 3)).toEqual(['Q1', 'Q3']);
   });
 });
